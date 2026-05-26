@@ -6,6 +6,8 @@ import { buildActivity, describeActivity, timeAgo } from "@/lib/activity";
 import { ShareButton } from "./share-button";
 import { CheerButton } from "./cheer-button";
 import { RealtimeRefresher } from "./realtime-refresher";
+import { ManageButton } from "./manage-button";
+import { CopyCode } from "./copy-code";
 
 export const dynamic = "force-dynamic";
 
@@ -117,11 +119,13 @@ export default async function ChannelPage({
           ← Home
         </Link>
         <h1 className="mt-2 text-2xl font-bold">{channel.name}</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          {rows.length} {rows.length === 1 ? "member" : "members"} · Invite code:{" "}
-          <span className="rounded bg-neutral-100 px-2 py-0.5 font-mono dark:bg-neutral-800">
-            {channel.invite_code}
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-neutral-500">
+          <span>
+            {rows.length} {rows.length === 1 ? "member" : "members"}
           </span>
+          <span>·</span>
+          <span>Invite code:</span>
+          <CopyCode code={channel.invite_code} />
         </p>
         {myRank > 0 && (
           <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">
@@ -224,6 +228,13 @@ export default async function ChannelPage({
           </ul>
         )}
       </section>
+
+      <div className="mt-2 flex justify-center">
+        <ManageButton
+          channelId={channel.id}
+          isOwner={channel.created_by === user.id}
+        />
+      </div>
     </main>
   );
 }

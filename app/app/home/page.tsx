@@ -85,7 +85,15 @@ export default async function HomePage() {
             Hi, {profile.display_name}
           </p>
         </div>
-        <SignOutButton />
+        <div className="flex items-center gap-4">
+          <Link
+            href="/app/settings"
+            className="text-sm text-neutral-500 underline hover:text-neutral-700 dark:hover:text-neutral-300"
+          >
+            Settings
+          </Link>
+          <SignOutButton />
+        </div>
       </header>
 
       {streak.kind === "quit" ? (
