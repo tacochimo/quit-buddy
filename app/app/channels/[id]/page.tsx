@@ -5,6 +5,7 @@ import { computeStreak } from "@/lib/streak";
 import { buildActivity, describeActivity, timeAgo } from "@/lib/activity";
 import { ShareButton } from "./share-button";
 import { CheerButton } from "./cheer-button";
+import { RealtimeRefresher } from "./realtime-refresher";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,7 @@ export default async function ChannelPage({
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
+      <RealtimeRefresher channelId={channel.id} />
       <header>
         <Link
           href="/app/home"
