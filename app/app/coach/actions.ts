@@ -68,12 +68,8 @@ export async function sendCoachMessage(message: string) {
     moneySaved: savings.moneySaved,
   };
 
-  // Insert user message first so it shows up even if the API call fails.
-  const { error: userInsertErr } = await supabase
-    .from("chat_messages")
-    .insert({ user_id: user.id, role: "user", content: trimmed });
-  if (userInsertErr) return { error: userInsertErr.message };
-
+  // Call OpenAI first. Only persist messages on success — keeps the chat
+  // history clean when billing/quota/timeout errors hit.
   let reply: string;
   try {
     reply = await generateCoachReply({
@@ -85,15 +81,30 @@ export async function sendCoachMessage(message: string) {
       userMessage: trimmed,
     });
   } catch (e: unknown) {
-    const msg = (e as Error).message ?? "unknown";
-    console.error("[coach] generation failed:", msg);
-    revalidatePath("/app/coach");
-    return { error: `Coach couldn't reply: ${msg}` };
+    const err = e as { status?: number; message?: string };
+    console.error("[coach] generation failed:", err);
+
+    if (err.status === 429) {
+      return {
+        error:
+          "Coach is paused: OpenAI account needs billing or a higher rate limit. Add a payment method at platform.openai.com/settings/organization/billing.",
+      };
+    }
+    if (err.status === 401) {
+      return { error: "Coach is paused: OPENAI_API_KEY is missing or invalid." };
+    }
+    return {
+      error: `Coach couldn't reply (${err.status ?? "network"}): ${err.message ?? "unknown error"}`,
+    };
   }
 
-  await supabase
-    .from("chat_messages")
-    .insert({ user_id: user.id, role: "assistant", content: reply });
+  // Insert user + assistant atomically (best-effort — Supabase doesn't do real
+  // tx, but back-to-back inserts are fine for a 2-row case).
+  const { error: insertErr } = await supabase.from("chat_messages").insert([
+    { user_id: user.id, role: "user", content: trimmed },
+    { user_id: user.id, role: "assistant", content: reply },
+  ]);
+  if (insertErr) return { error: insertErr.message };
 
   revalidatePath("/app/coach");
 }

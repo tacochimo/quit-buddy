@@ -46,7 +46,11 @@ export function CoachChat({
     startTransition(async () => {
       addOptimistic(trimmed);
       const result = await sendCoachMessage(trimmed);
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        // Restore the typed message so the user can edit/retry.
+        setInput(trimmed);
+      }
     });
   }
 
