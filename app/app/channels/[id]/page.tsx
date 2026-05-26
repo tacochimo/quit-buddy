@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { computeStreak } from "@/lib/streak";
+import { buildActivity, describeActivity, timeAgo } from "@/lib/activity";
 import { ShareButton } from "./share-button";
+import { CheerButton } from "./cheer-button";
 
 export const dynamic = "force-dynamic";
 
@@ -19,32 +21,63 @@ export default async function ChannelPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // RLS hides channels the user isn't a member of, so .single() will fail.
   const { data: channel } = await supabase
     .from("channels")
     .select("id, name, invite_code, created_by")
     .eq("id", id)
     .maybeSingle();
-
   if (!channel) notFound();
 
-  // Members + their profiles.
-  const { data: members } = await supabase
+  const { data: membersRaw } = await supabase
     .from("channel_members")
-    .select("user_id, role, profiles!inner(display_name)")
+    .select("user_id, role, joined_at, profiles!inner(display_name)")
     .eq("channel_id", id);
 
-  const memberIds = (members ?? []).map((m) => m.user_id);
+  const members = (membersRaw ?? []).map((m) => {
+    const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+    return {
+      user_id: m.user_id,
+      role: m.role as "owner" | "member",
+      joined_at: m.joined_at,
+      display_name:
+        (p as { display_name?: string } | null)?.display_name ?? "—",
+    };
+  });
 
-  // Latest streak event per member (ordered desc; we take the first per user).
-  const { data: events } = await supabase
+  const memberIds = members.map((m) => m.user_id);
+
+  // All streak events for these members (newest first).
+  const { data: eventsData } = await supabase
     .from("streak_events")
-    .select("user_id, type, occurred_at")
+    .select("id, user_id, type, occurred_at")
     .in("user_id", memberIds)
     .order("occurred_at", { ascending: false });
+  const events = eventsData ?? [];
 
-  const latestByUser = new Map<string, { type: "quit" | "relapse"; occurred_at: string }>();
-  for (const e of events ?? []) {
+  // Personal milestone stars for these members.
+  const { data: starsData } = await supabase
+    .from("stars")
+    .select("id, user_id, kind, awarded_at")
+    .in("user_id", memberIds)
+    .is("channel_id", null);
+  const stars = starsData ?? [];
+
+  // Cheer counts received per member in this channel.
+  const { data: reactionsData } = await supabase
+    .from("reactions")
+    .select("to_user_id")
+    .eq("channel_id", id);
+  const cheersByUser = new Map<string, number>();
+  for (const r of reactionsData ?? []) {
+    cheersByUser.set(r.to_user_id, (cheersByUser.get(r.to_user_id) ?? 0) + 1);
+  }
+
+  // Latest streak event per user → current streak.
+  const latestByUser = new Map<
+    string,
+    { type: "quit" | "relapse"; occurred_at: string }
+  >();
+  for (const e of events) {
     if (!latestByUser.has(e.user_id)) {
       latestByUser.set(e.user_id, {
         type: e.type as "quit" | "relapse",
@@ -53,24 +86,24 @@ export default async function ChannelPage({
     }
   }
 
-  const rows = (members ?? [])
+  const rows = members
     .map((m) => {
       const streak = computeStreak(latestByUser.get(m.user_id) ?? null);
       const days = streak.kind === "quit" ? streak.days : 0;
-      // PostgREST nested select returns an array even with !inner — handle both.
-      const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
       return {
         userId: m.user_id,
-        displayName:
-          (profile as { display_name?: string } | null)?.display_name ?? "—",
-        role: m.role as "owner" | "member",
+        displayName: m.display_name,
+        role: m.role,
         days,
         relapsed: streak.kind === "relapse",
+        cheers: cheersByUser.get(m.user_id) ?? 0,
       };
     })
     .sort((a, b) => b.days - a.days);
 
   const myRank = rows.findIndex((r) => r.userId === user.id) + 1;
+
+  const activity = buildActivity({ members, events, stars });
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
@@ -108,20 +141,21 @@ export default async function ChannelPage({
         <ol>
           {rows.map((row, idx) => {
             const isMe = row.userId === user.id;
-            const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
+            const medal =
+              idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
             return (
               <li
                 key={row.userId}
-                className={`flex items-center justify-between border-b border-neutral-200 px-5 py-4 last:border-b-0 dark:border-neutral-800 ${
+                className={`flex items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 last:border-b-0 dark:border-neutral-800 ${
                   isMe ? "bg-emerald-50/50 dark:bg-emerald-950/20" : ""
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <span className="w-6 text-sm font-medium tabular-nums text-neutral-500">
                     {medal ?? `#${idx + 1}`}
                   </span>
-                  <div>
-                    <p className="font-medium">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
                       {row.displayName}
                       {isMe && (
                         <span className="ml-2 text-xs text-emerald-700 dark:text-emerald-400">
@@ -139,16 +173,54 @@ export default async function ChannelPage({
                     )}
                   </div>
                 </div>
-                <p className="text-lg font-semibold tabular-nums">
-                  {row.days}
-                  <span className="ml-1 text-sm font-normal text-neutral-500">
-                    {row.days === 1 ? "day" : "days"}
-                  </span>
-                </p>
+                <div className="flex shrink-0 items-center gap-3">
+                  {!isMe ? (
+                    <CheerButton
+                      channelId={channel.id}
+                      toUserId={row.userId}
+                      count={row.cheers}
+                    />
+                  ) : row.cheers > 0 ? (
+                    <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium dark:bg-neutral-800">
+                      👏 {row.cheers}
+                    </span>
+                  ) : null}
+                  <p className="text-lg font-semibold tabular-nums">
+                    {row.days}
+                    <span className="ml-1 text-sm font-normal text-neutral-500">
+                      {row.days === 1 ? "day" : "days"}
+                    </span>
+                  </p>
+                </div>
               </li>
             );
           })}
         </ol>
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800">
+        <h2 className="border-b border-neutral-200 bg-neutral-50 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900">
+          Activity
+        </h2>
+        {activity.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-neutral-500">
+            Nothing yet. Hit your first day or invite a friend.
+          </p>
+        ) : (
+          <ul>
+            {activity.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center justify-between border-b border-neutral-200 px-5 py-3 text-sm last:border-b-0 dark:border-neutral-800"
+              >
+                <span>{describeActivity(item)}</span>
+                <span className="shrink-0 text-xs text-neutral-500">
+                  {timeAgo(item.occurredAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </main>
   );
