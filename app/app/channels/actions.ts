@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { generateInviteCode } from "@/lib/invite-code";
 
 export async function createChannel(formData: FormData) {
   const supabase = await createClient();
@@ -16,49 +15,16 @@ export async function createChannel(formData: FormData) {
     return { error: "Channel name must be 2–50 characters." };
   }
 
-  // DEBUG: what does the database see for auth.uid()?
-  const { data: dbUid } = await supabase.rpc("whoami");
-  if (dbUid !== user.id) {
-    return {
-      error: `auth mismatch: client user.id=${user.id} but db auth.uid()=${dbUid}`,
-    };
-  }
-
-  // Retry on the very rare invite-code collision.
-  let channelId: string | null = null;
-  let lastErr: string | null = null;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = generateInviteCode();
-    const { data, error } = await supabase
-      .from("channels")
-      .insert({
-        name,
-        invite_code: code,
-        created_by: user.id,
-      })
-      .select("id")
-      .single();
-
-    if (!error && data) {
-      channelId = data.id;
-      break;
-    }
-    lastErr = error?.message ?? "unknown";
-    // 23505 = unique_violation — retry with a new code.
-    if (error?.code !== "23505") break;
-  }
-
-  if (!channelId) {
-    return { error: `Could not create channel: ${lastErr}` };
-  }
-
-  // Owner membership.
-  const { error: memberErr } = await supabase.from("channel_members").insert({
-    channel_id: channelId,
-    user_id: user.id,
-    role: "owner",
+  const { data: channelId, error } = await supabase.rpc("create_channel", {
+    channel_name: name,
   });
-  if (memberErr) return { error: memberErr.message };
+
+  if (error) {
+    if (error.message.includes("invalid_name"))
+      return { error: "Channel name must be 2–50 characters." };
+    if (error.message.includes("not_authenticated")) redirect("/login");
+    return { error: error.message };
+  }
 
   redirect(`/app/channels/${channelId}`);
 }
