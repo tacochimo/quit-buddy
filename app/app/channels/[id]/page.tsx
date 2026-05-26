@@ -65,6 +65,15 @@ export default async function ChannelPage({
     .is("channel_id", null);
   const stars = starsData ?? [];
 
+  // SOS signals in this channel.
+  const { data: sosData } = await supabase
+    .from("sos_signals")
+    .select("id, user_id, note, created_at, resolved_at")
+    .eq("channel_id", id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const sos = sosData ?? [];
+
   // Cheer counts received per member in this channel.
   const { data: reactionsData } = await supabase
     .from("reactions")
@@ -106,7 +115,7 @@ export default async function ChannelPage({
 
   const myRank = rows.findIndex((r) => r.userId === user.id) + 1;
 
-  const activity = buildActivity({ members, events, stars });
+  const activity = buildActivity({ members, events, stars, sos });
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
@@ -214,17 +223,24 @@ export default async function ChannelPage({
           </p>
         ) : (
           <ul>
-            {activity.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center justify-between border-b border-neutral-200 px-5 py-3 text-sm last:border-b-0 dark:border-neutral-800"
-              >
-                <span>{describeActivity(item)}</span>
-                <span className="shrink-0 text-xs text-neutral-500">
-                  {timeAgo(item.occurredAt)}
-                </span>
-              </li>
-            ))}
+            {activity.map((item) => {
+              const isSos = item.kind === "sos";
+              return (
+                <li
+                  key={item.id}
+                  className={`flex items-start justify-between gap-3 border-b border-neutral-200 px-5 py-3 text-sm last:border-b-0 dark:border-neutral-800 ${
+                    isSos
+                      ? "bg-amber-50 font-medium dark:bg-amber-950/30"
+                      : ""
+                  }`}
+                >
+                  <span className="min-w-0">{describeActivity(item)}</span>
+                  <span className="shrink-0 text-xs text-neutral-500">
+                    {timeAgo(item.occurredAt)}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

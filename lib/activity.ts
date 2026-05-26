@@ -1,4 +1,10 @@
-export type ActivityKind = "joined" | "quit_started" | "relapse" | "milestone";
+export type ActivityKind =
+  | "joined"
+  | "quit_started"
+  | "relapse"
+  | "milestone"
+  | "sos"
+  | "sos_resolved";
 
 export type ActivityItem = {
   id: string;
@@ -7,12 +13,20 @@ export type ActivityItem = {
   actorName: string;
   kind: ActivityKind;
   milestoneDays?: number;
+  note?: string | null;
 };
 
 export function buildActivity(args: {
   members: { user_id: string; joined_at: string; display_name: string }[];
   events: { id: string; user_id: string; type: string; occurred_at: string }[];
   stars: { id: string; user_id: string; kind: string; awarded_at: string }[];
+  sos?: {
+    id: string;
+    user_id: string;
+    note: string | null;
+    created_at: string;
+    resolved_at: string | null;
+  }[];
 }): ActivityItem[] {
   const nameOf = new Map(args.members.map((m) => [m.user_id, m.display_name]));
   const items: ActivityItem[] = [];
@@ -50,6 +64,26 @@ export function buildActivity(args: {
     });
   }
 
+  for (const signal of args.sos ?? []) {
+    items.push({
+      id: `sos-${signal.id}`,
+      occurredAt: new Date(signal.created_at),
+      actorId: signal.user_id,
+      actorName: nameOf.get(signal.user_id) ?? "—",
+      kind: "sos",
+      note: signal.note,
+    });
+    if (signal.resolved_at) {
+      items.push({
+        id: `sos-r-${signal.id}`,
+        occurredAt: new Date(signal.resolved_at),
+        actorId: signal.user_id,
+        actorName: nameOf.get(signal.user_id) ?? "—",
+        kind: "sos_resolved",
+      });
+    }
+  }
+
   items.sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
   return items.slice(0, 20);
 }
@@ -64,6 +98,12 @@ export function describeActivity(item: ActivityItem): string {
       return `${item.actorName} restarted`;
     case "milestone":
       return `${item.actorName} hit ${item.milestoneDays} days ⭐`;
+    case "sos":
+      return item.note
+        ? `🆘 ${item.actorName}: "${item.note}"`
+        : `🆘 ${item.actorName} needs support`;
+    case "sos_resolved":
+      return `✅ ${item.actorName} is OK now`;
   }
 }
 

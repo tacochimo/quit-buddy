@@ -54,6 +54,16 @@ export function RealtimeRefresher({ channelId }: { channelId: string }) {
         { event: "INSERT", schema: "public", table: "stars" },
         scheduleRefresh,
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "sos_signals",
+          filter: `channel_id=eq.${channelId}`,
+        },
+        scheduleRefresh,
+      )
       .subscribe();
 
     return () => {

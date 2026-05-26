@@ -11,6 +11,7 @@ import {
 import { SignOutButton } from "./sign-out-button";
 import { RelapseButton, RestartButton } from "./relapse-button";
 import { awardMilestoneStars } from "./actions";
+import { ActiveSOSBanner, SOSButton } from "./sos-button";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,16 @@ export default async function HomePage() {
     const c = Array.isArray(row.channels) ? row.channels : [row.channels];
     return c.filter(Boolean) as { id: string; name: string }[];
   });
+
+  // Active (unresolved) SOS by this user — show banner if any.
+  const { data: activeSos } = await supabase
+    .from("sos_signals")
+    .select("note, created_at")
+    .eq("user_id", user.id)
+    .is("resolved_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
@@ -147,6 +158,17 @@ export default async function HomePage() {
               )}
             </div>
           </section>
+
+          {activeSos ? (
+            <ActiveSOSBanner
+              note={activeSos.note}
+              sentAt={new Date(activeSos.created_at)}
+            />
+          ) : (
+            <div className="flex justify-center">
+              <SOSButton hasChannels={channels.length > 0} />
+            </div>
+          )}
 
           <div className="mt-2 flex justify-center">
             <RelapseButton canRelapse />
