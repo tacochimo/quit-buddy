@@ -77,7 +77,7 @@ function LoginForm() {
       {step === "email" ? (
         <>
           <p className="text-neutral-600 dark:text-neutral-400">
-            Enter your email. We&apos;ll send you a 6-digit code.
+            Enter your email. We&apos;ll send you a sign-in code.
           </p>
 
           <form onSubmit={sendCode} className="flex flex-col gap-3">
@@ -105,7 +105,7 @@ function LoginForm() {
             <span className="font-medium text-neutral-900 dark:text-neutral-100">
               {email}
             </span>{" "}
-            for a 6-digit code.
+            for the sign-in code.
           </p>
 
           <form onSubmit={verifyCode} className="flex flex-col gap-3">
@@ -113,7 +113,7 @@ function LoginForm() {
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              maxLength={6}
+              maxLength={10}
               autoComplete="one-time-code"
               required
               value={code}
