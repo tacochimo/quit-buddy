@@ -16,6 +16,14 @@ export async function createChannel(formData: FormData) {
     return { error: "Channel name must be 2–50 characters." };
   }
 
+  // DEBUG: what does the database see for auth.uid()?
+  const { data: dbUid } = await supabase.rpc("whoami");
+  if (dbUid !== user.id) {
+    return {
+      error: `auth mismatch: client user.id=${user.id} but db auth.uid()=${dbUid}`,
+    };
+  }
+
   // Retry on the very rare invite-code collision.
   let channelId: string | null = null;
   let lastErr: string | null = null;
