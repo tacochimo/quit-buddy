@@ -9,6 +9,31 @@ import {
 } from "@/lib/coach";
 import { computeSavings, computeStreak } from "@/lib/streak";
 
+const DAILY_LIMIT = Number(process.env.COACH_DAILY_LIMIT ?? 30);
+
+function startOfUtcDayIso(): string {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+export async function getCoachUsage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { used: 0, limit: DAILY_LIMIT };
+
+  const { count } = await supabase
+    .from("chat_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("role", "user")
+    .gte("created_at", startOfUtcDayIso());
+
+  return { used: count ?? 0, limit: DAILY_LIMIT };
+}
+
 export async function sendCoachMessage(message: string) {
   const supabase = await createClient();
   const {
@@ -18,6 +43,20 @@ export async function sendCoachMessage(message: string) {
 
   const trimmed = message.trim().slice(0, 1000);
   if (trimmed.length < 1) return { error: "Type a message first." };
+
+  // Daily usage cap — counts only USER messages today (UTC). Coach replies and
+  // proactive nudges don't count against the user's quota.
+  const { count: usedToday } = await supabase
+    .from("chat_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("role", "user")
+    .gte("created_at", startOfUtcDayIso());
+  if ((usedToday ?? 0) >= DAILY_LIMIT) {
+    return {
+      error: `You've used your ${DAILY_LIMIT} coach messages for today. Resets at UTC midnight.`,
+    };
+  }
 
   // Build context from profile + latest streak event.
   const [profileRes, latestRes, historyRes] = await Promise.all([

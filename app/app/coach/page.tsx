@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CoachChat } from "./chat";
+import { getCoachUsage } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export default async function CoachPage() {
     .limit(100);
 
   const configured = Boolean(process.env.OPENAI_API_KEY);
+  const usage = await getCoachUsage();
+  const remaining = Math.max(0, usage.limit - usage.used);
 
   return (
     <main className="mx-auto flex h-[100dvh] max-w-xl flex-col px-4 pb-4 pt-4">
@@ -31,7 +34,20 @@ export default async function CoachPage() {
           >
             ← Home
           </Link>
-          <h1 className="mt-1 text-xl font-bold">Coach</h1>
+          <h1 className="mt-1 text-xl font-bold">
+            Coach
+            {remaining <= 5 && (
+              <span
+                className={`ml-2 text-xs font-normal ${
+                  remaining === 0
+                    ? "text-red-600"
+                    : "text-neutral-500"
+                }`}
+              >
+                {remaining}/{usage.limit} left today
+              </span>
+            )}
+          </h1>
         </div>
         {messages && messages.length > 0 && <ClearButton />}
       </header>
