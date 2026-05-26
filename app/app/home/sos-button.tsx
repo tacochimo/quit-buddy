@@ -3,7 +3,13 @@
 import { useState, useTransition } from "react";
 import { resolveSOS, sendSOS } from "./sos-actions";
 
-export function SOSButton({ hasChannels }: { hasChannels: boolean }) {
+export function SOSButton({
+  hasChannels,
+  reasons,
+}: {
+  hasChannels: boolean;
+  reasons: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [pending, startTransition] = useTransition();
@@ -43,6 +49,13 @@ export function SOSButton({ hasChannels }: { hasChannels: boolean }) {
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/40">
+      {reasons && (
+        <div className="rounded-lg bg-white/70 p-3 text-sm italic text-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-300">
+          Remember why you started:
+          <br />
+          &ldquo;{reasons}&rdquo;
+        </div>
+      )}
       <p className="text-sm font-medium">
         Send a quick SOS to your channel-mates.
       </p>

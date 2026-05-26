@@ -9,6 +9,7 @@ type Defaults = {
   baseline_cigs_per_day: number;
   cost_per_pack: number | string;
   cigs_per_pack: number;
+  reasons: string;
 };
 
 export function SettingsForm({ defaults }: { defaults: Defaults }) {
@@ -82,6 +83,20 @@ export function SettingsForm({ defaults }: { defaults: Defaults }) {
           min={1}
           max={50}
           defaultValue={defaults.cigs_per_pack}
+          className={inputCls}
+        />
+      </Field>
+
+      <Field
+        label="Why are you quitting?"
+        hint="Shown to you during cravings/SOS as a reminder."
+      >
+        <textarea
+          name="reasons"
+          rows={3}
+          maxLength={500}
+          defaultValue={defaults.reasons}
+          placeholder="For my kids. To stop wasting money."
           className={inputCls}
         />
       </Field>

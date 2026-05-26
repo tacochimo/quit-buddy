@@ -64,6 +64,19 @@ export function OnboardingForm({ defaultQuitDate }: { defaultQuitDate: string })
         />
       </Field>
 
+      <Field
+        label="Why are you quitting?"
+        hint="Optional. We'll resurface this when you're struggling."
+      >
+        <textarea
+          name="reasons"
+          rows={3}
+          maxLength={500}
+          placeholder="For my kids. To stop wasting money. To breathe better when I run."
+          className={inputCls}
+        />
+      </Field>
+
       <button
         type="submit"
         disabled={pending}

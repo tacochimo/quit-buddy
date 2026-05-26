@@ -16,7 +16,7 @@ export default async function SettingsPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack",
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons",
     )
     .eq("id", user.id)
     .single();
@@ -43,6 +43,7 @@ export default async function SettingsPage() {
           baseline_cigs_per_day: profile.baseline_cigs_per_day ?? 10,
           cost_per_pack: profile.cost_per_pack ?? 8,
           cigs_per_pack: profile.cigs_per_pack ?? 20,
+          reasons: profile.reasons ?? "",
         }}
       />
 

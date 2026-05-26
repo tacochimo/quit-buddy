@@ -14,6 +14,7 @@ export async function saveOnboarding(formData: FormData) {
   const baselineCigs = Number(formData.get("baseline_cigs_per_day") ?? 0);
   const costPerPack = Number(formData.get("cost_per_pack") ?? 0);
   const cigsPerPack = Number(formData.get("cigs_per_pack") ?? 20);
+  const reasons = String(formData.get("reasons") ?? "").trim().slice(0, 500);
 
   if (!quitDateStr || baselineCigs <= 0 || costPerPack <= 0) {
     return { error: "Please fill in all fields with valid numbers." };
@@ -28,6 +29,7 @@ export async function saveOnboarding(formData: FormData) {
       baseline_cigs_per_day: baselineCigs,
       cost_per_pack: costPerPack,
       cigs_per_pack: cigsPerPack,
+      reasons: reasons || null,
     })
     .eq("id", user.id);
 

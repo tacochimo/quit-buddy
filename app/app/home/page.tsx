@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -25,7 +26,7 @@ export default async function HomePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack",
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons",
     )
     .eq("id", user.id)
     .single();
@@ -126,6 +127,12 @@ export default async function HomePage() {
             )}
           </section>
 
+          {profile.reasons && (
+            <p className="rounded-2xl bg-neutral-50 px-5 py-4 text-sm italic text-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+              &ldquo;{profile.reasons}&rdquo;
+            </p>
+          )}
+
           <section className="grid grid-cols-2 gap-3">
             <Stat
               label="Money saved"
@@ -134,6 +141,21 @@ export default async function HomePage() {
             <Stat
               label="Cigs avoided"
               value={savings.cigsAvoided.toLocaleString()}
+            />
+          </section>
+
+          <section className="grid grid-cols-2 gap-3">
+            <Tool
+              href="/app/breathe"
+              icon="🌬"
+              label="Breathe"
+              hint="Calm a craving"
+            />
+            <Tool
+              href="/app/health"
+              icon="📈"
+              label="Health"
+              hint="How you're healing"
             />
           </section>
 
@@ -166,7 +188,10 @@ export default async function HomePage() {
             />
           ) : (
             <div className="flex justify-center">
-              <SOSButton hasChannels={channels.length > 0} />
+              <SOSButton
+                hasChannels={channels.length > 0}
+                reasons={profile.reasons ?? null}
+              />
             </div>
           )}
 
@@ -249,5 +274,28 @@ function Stat({ label, value }: { label: string; value: string }) {
       </p>
       <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
     </div>
+  );
+}
+
+function Tool({
+  href,
+  icon,
+  label,
+  hint,
+}: {
+  href: Route;
+  icon: string;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="rounded-2xl border border-neutral-200 p-4 transition hover:border-emerald-300 hover:bg-emerald-50/30 dark:border-neutral-800 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/20"
+    >
+      <p className="text-2xl">{icon}</p>
+      <p className="mt-2 font-semibold">{label}</p>
+      <p className="text-xs text-neutral-500">{hint}</p>
+    </Link>
   );
 }
