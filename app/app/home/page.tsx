@@ -144,7 +144,13 @@ export default async function HomePage() {
             />
           </section>
 
-          <section className="grid grid-cols-2 gap-3">
+          <section className="grid grid-cols-3 gap-3">
+            <Tool
+              href="/app/coach"
+              icon="🤝"
+              label="Coach"
+              hint="Talk it out"
+            />
             <Tool
               href="/app/breathe"
               icon="🌬"
@@ -155,7 +161,7 @@ export default async function HomePage() {
               href="/app/health"
               icon="📈"
               label="Health"
-              hint="How you're healing"
+              hint="You're healing"
             />
           </section>
 
