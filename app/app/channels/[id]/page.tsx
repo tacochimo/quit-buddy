@@ -8,6 +8,7 @@ import { CheerButton } from "./cheer-button";
 import { RealtimeRefresher } from "./realtime-refresher";
 import { ManageButton } from "./manage-button";
 import { CopyCode } from "./copy-code";
+import { RenameChannel } from "./rename-form";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,12 @@ export default async function ChannelPage({
         >
           ← Home
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">{channel.name}</h1>
+        <h1 className="mt-2 text-2xl font-bold">
+          {channel.name}
+          {channel.created_by === user.id && (
+            <RenameChannel channelId={channel.id} currentName={channel.name} />
+          )}
+        </h1>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-neutral-500">
           <span>
             {rows.length} {rows.length === 1 ? "member" : "members"}

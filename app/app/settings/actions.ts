@@ -17,6 +17,11 @@ export async function updateProfile(formData: FormData) {
   const costPerPack = Number(formData.get("cost_per_pack") ?? 0);
   const cigsPerPack = Number(formData.get("cigs_per_pack") ?? 20);
   const reasons = String(formData.get("reasons") ?? "").trim().slice(0, 500);
+  const goalName = String(formData.get("savings_goal_name") ?? "")
+    .trim()
+    .slice(0, 80);
+  const goalAmountRaw = String(formData.get("savings_goal_amount") ?? "").trim();
+  const goalAmount = goalAmountRaw === "" ? null : Number(goalAmountRaw);
 
   if (displayName.length < 1 || displayName.length > 50) {
     return { error: "Display name must be 1–50 characters." };
@@ -43,6 +48,8 @@ export async function updateProfile(formData: FormData) {
       cost_per_pack: costPerPack,
       cigs_per_pack: cigsPerPack,
       reasons: reasons || null,
+      savings_goal_name: goalName || null,
+      savings_goal_amount: goalAmount && goalAmount > 0 ? goalAmount : null,
     })
     .eq("id", user.id);
   if (updateErr) return { error: updateErr.message };

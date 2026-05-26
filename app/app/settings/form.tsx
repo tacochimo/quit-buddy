@@ -10,6 +10,8 @@ type Defaults = {
   cost_per_pack: number | string;
   cigs_per_pack: number;
   reasons: string;
+  savings_goal_name: string;
+  savings_goal_amount: number | string;
 };
 
 export function SettingsForm({ defaults }: { defaults: Defaults }) {
@@ -100,6 +102,35 @@ export function SettingsForm({ defaults }: { defaults: Defaults }) {
           className={inputCls}
         />
       </Field>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="col-span-2">
+          <Field
+            label="Savings goal (optional)"
+            hint="Show progress toward something concrete."
+          >
+            <input
+              type="text"
+              name="savings_goal_name"
+              maxLength={80}
+              defaultValue={defaults.savings_goal_name}
+              placeholder="Vacation, new bike…"
+              className={inputCls}
+            />
+          </Field>
+        </div>
+        <Field label="Amount">
+          <input
+            type="number"
+            name="savings_goal_amount"
+            min={1}
+            step={1}
+            defaultValue={defaults.savings_goal_amount}
+            placeholder="1000"
+            className={inputCls}
+          />
+        </Field>
+      </div>
 
       <button
         type="submit"

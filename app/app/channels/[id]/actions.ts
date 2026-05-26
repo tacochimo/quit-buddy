@@ -22,6 +22,29 @@ export async function leaveChannel(channelId: string) {
   redirect("/app/home");
 }
 
+export async function renameChannel(channelId: string, newName: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const name = newName.trim();
+  if (name.length < 2 || name.length > 50) {
+    return { error: "Name must be 2–50 characters." };
+  }
+
+  // RLS already restricts UPDATE on channels to the owner.
+  const { error } = await supabase
+    .from("channels")
+    .update({ name })
+    .eq("id", channelId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/app/channels/${channelId}`);
+  revalidatePath("/app/home");
+}
+
 export async function deleteChannel(channelId: string) {
   const supabase = await createClient();
   const {

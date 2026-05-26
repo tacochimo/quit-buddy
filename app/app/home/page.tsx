@@ -26,7 +26,7 @@ export default async function HomePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons",
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, savings_goal_name, savings_goal_amount",
     )
     .eq("id", user.id)
     .single();
@@ -88,6 +88,35 @@ export default async function HomePage() {
     .limit(1)
     .maybeSingle();
 
+  // This week digest: cheers received + peer milestones in the last 7 days.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const channelIds = channels.map((c) => c.id);
+
+  const { count: cheersThisWeek } = await supabase
+    .from("reactions")
+    .select("id", { count: "exact", head: true })
+    .eq("to_user_id", user.id)
+    .gte("created_at", sevenDaysAgo);
+
+  let peerMilestonesThisWeek = 0;
+  if (channelIds.length > 0) {
+    const { data: peerIds } = await supabase
+      .from("channel_members")
+      .select("user_id")
+      .in("channel_id", channelIds)
+      .neq("user_id", user.id);
+    const ids = [...new Set((peerIds ?? []).map((p) => p.user_id))];
+    if (ids.length > 0) {
+      const { count } = await supabase
+        .from("stars")
+        .select("id", { count: "exact", head: true })
+        .in("user_id", ids)
+        .is("channel_id", null)
+        .gte("awarded_at", sevenDaysAgo);
+      peerMilestonesThisWeek = count ?? 0;
+    }
+  }
+
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
       <header className="flex items-center justify-between">
@@ -144,7 +173,15 @@ export default async function HomePage() {
             />
           </section>
 
-          <section className="grid grid-cols-3 gap-3">
+          {profile.savings_goal_amount && profile.savings_goal_amount > 0 && (
+            <SavingsGoalBar
+              name={profile.savings_goal_name ?? "Goal"}
+              saved={savings.moneySaved}
+              target={Number(profile.savings_goal_amount)}
+            />
+          )}
+
+          <section className="grid grid-cols-2 gap-3">
             <Tool
               href="/app/coach"
               icon="🤝"
@@ -162,6 +199,12 @@ export default async function HomePage() {
               icon="📈"
               label="Health"
               hint="You're healing"
+            />
+            <Tool
+              href="/app/cravings"
+              icon="📓"
+              label="Cravings"
+              hint="Log + patterns"
             />
           </section>
 
@@ -186,6 +229,32 @@ export default async function HomePage() {
               )}
             </div>
           </section>
+
+          {channels.length > 0 &&
+            ((cheersThisWeek ?? 0) > 0 || peerMilestonesThisWeek > 0) && (
+              <section className="rounded-2xl bg-neutral-50 px-5 py-4 dark:bg-neutral-900">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+                  This week
+                </h2>
+                <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
+                  {(cheersThisWeek ?? 0) > 0 && (
+                    <>
+                      <strong>{cheersThisWeek}</strong>{" "}
+                      {cheersThisWeek === 1 ? "cheer" : "cheers"} from
+                      channel-mates
+                    </>
+                  )}
+                  {(cheersThisWeek ?? 0) > 0 &&
+                    peerMilestonesThisWeek > 0 && <> · </>}
+                  {peerMilestonesThisWeek > 0 && (
+                    <>
+                      <strong>{peerMilestonesThisWeek}</strong> milestone
+                      {peerMilestonesThisWeek !== 1 ? "s" : ""} by your mates
+                    </>
+                  )}
+                </p>
+              </section>
+            )}
 
           {activeSos ? (
             <ActiveSOSBanner
@@ -280,6 +349,41 @@ function Stat({ label, value }: { label: string; value: string }) {
       </p>
       <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
     </div>
+  );
+}
+
+function SavingsGoalBar({
+  name,
+  saved,
+  target,
+}: {
+  name: string;
+  saved: number;
+  target: number;
+}) {
+  const pct = Math.max(0, Math.min(100, (saved / target) * 100));
+  return (
+    <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          Goal: {name}
+        </h2>
+        <p className="text-sm tabular-nums">
+          ${saved.toFixed(0)} <span className="text-neutral-500">/ ${target}</span>
+        </p>
+      </div>
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
+        <div
+          className="h-full bg-emerald-500 transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="mt-2 text-xs text-neutral-500">
+        {pct >= 100
+          ? "🎉 You hit your goal!"
+          : `${pct.toFixed(0)}% there`}
+      </p>
+    </section>
   );
 }
 
