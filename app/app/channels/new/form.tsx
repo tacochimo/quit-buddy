@@ -1,0 +1,44 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { createChannel } from "../actions";
+
+export function CreateChannelForm() {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function onSubmit(formData: FormData) {
+    setError(null);
+    startTransition(async () => {
+      const result = await createChannel(formData);
+      if (result?.error) setError(result.error);
+    });
+  }
+
+  return (
+    <form action={onSubmit} className="flex flex-col gap-4">
+      <label className="flex flex-col gap-1.5">
+        <span className="font-medium">Channel name</span>
+        <input
+          type="text"
+          name="name"
+          required
+          minLength={2}
+          maxLength={50}
+          placeholder="Family Quit Crew"
+          className="rounded-lg border border-neutral-300 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900"
+        />
+      </label>
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="rounded-lg bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+      >
+        {pending ? "Creating…" : "Create channel"}
+      </button>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+    </form>
+  );
+}

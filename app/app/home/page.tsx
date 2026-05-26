@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -64,6 +65,16 @@ export default async function HomePage() {
   const earnedKinds = new Set((starsData ?? []).map((s) => s.kind));
   const nextMilestone =
     MILESTONES.find((m) => !earnedKinds.has(milestoneKind(m))) ?? null;
+
+  const { data: channelRows } = await supabase
+    .from("channel_members")
+    .select("channels!inner(id, name)")
+    .eq("user_id", user.id);
+
+  const channels = (channelRows ?? []).flatMap((row) => {
+    const c = Array.isArray(row.channels) ? row.channels : [row.channels];
+    return c.filter(Boolean) as { id: string; name: string }[];
+  });
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
@@ -145,7 +156,58 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      <ChannelsSection channels={channels} />
     </main>
+  );
+}
+
+function ChannelsSection({
+  channels,
+}: {
+  channels: { id: string; name: string }[];
+}) {
+  return (
+    <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        Your channels
+      </h2>
+
+      {channels.length === 0 ? (
+        <p className="mt-3 text-sm text-neutral-500">
+          Quit smoking with people who&apos;ll keep you accountable.
+        </p>
+      ) : (
+        <ul className="mt-3 flex flex-col gap-1">
+          {channels.map((c) => (
+            <li key={c.id}>
+              <Link
+                href={`/app/channels/${c.id}`}
+                className="flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-900"
+              >
+                <span className="font-medium">{c.name}</span>
+                <span className="text-neutral-400">→</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-4 flex gap-2">
+        <Link
+          href="/app/channels/new"
+          className="flex-1 rounded-lg bg-neutral-900 px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+        >
+          + Create
+        </Link>
+        <Link
+          href="/app/channels/join"
+          className="flex-1 rounded-lg border border-neutral-300 px-4 py-2 text-center text-sm font-medium transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+        >
+          Join by code
+        </Link>
+      </div>
+    </section>
   );
 }
 
