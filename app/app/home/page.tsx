@@ -23,15 +23,28 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  // Core profile load — must succeed. Surface the error rather than looping.
+  const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select(
-      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, savings_goal_name, savings_goal_amount",
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons",
     )
     .eq("id", user.id)
     .single();
 
+  if (profileErr) {
+    throw new Error(`Couldn't load profile: ${profileErr.message}`);
+  }
   if (!profile?.quit_date) redirect("/app/onboarding");
+
+  // Optional/newer columns — failures here just mean "migration not run yet".
+  const { data: goalData } = await supabase
+    .from("profiles")
+    .select("savings_goal_name, savings_goal_amount")
+    .eq("id", user.id)
+    .single();
+  const savingsGoalName = goalData?.savings_goal_name ?? null;
+  const savingsGoalAmount = goalData?.savings_goal_amount ?? null;
 
   const { data: latestEvent } = await supabase
     .from("streak_events")
@@ -173,11 +186,11 @@ export default async function HomePage() {
             />
           </section>
 
-          {profile.savings_goal_amount && profile.savings_goal_amount > 0 && (
+          {savingsGoalAmount && Number(savingsGoalAmount) > 0 && (
             <SavingsGoalBar
-              name={profile.savings_goal_name ?? "Goal"}
+              name={savingsGoalName ?? "Goal"}
               saved={savings.moneySaved}
-              target={Number(profile.savings_goal_amount)}
+              target={Number(savingsGoalAmount)}
             />
           )}
 
