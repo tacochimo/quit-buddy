@@ -55,15 +55,18 @@ function LoginForm() {
     setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code.trim(),
-      type: "email",
-    });
+    const token = code.trim();
+
+    // signInWithOtp generates "email" type for existing users and "signup"
+    // for first-timers when shouldCreateUser is true. Try both.
+    let result = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (result.error) {
+      result = await supabase.auth.verifyOtp({ email, token, type: "signup" });
+    }
 
     setBusy(false);
-    if (error) {
-      setError(error.message);
+    if (result.error) {
+      setError(result.error.message);
     } else {
       router.push("/app/home");
       router.refresh();
