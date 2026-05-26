@@ -1,9 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Quit Buddy",
   description: "Quit smoking together. Track streaks, climb your channel leaderboard.",
+  appleWebApp: {
+    capable: true,
+    title: "Quit Buddy",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#059669",
 };
 
 export default function RootLayout({

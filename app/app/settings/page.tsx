@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "./form";
+import { NotificationsToggle } from "./notifications-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,10 @@ export default async function SettingsPage() {
           cost_per_pack: profile.cost_per_pack ?? 8,
           cigs_per_pack: profile.cigs_per_pack ?? 20,
         }}
+      />
+
+      <NotificationsToggle
+        vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
     </main>
   );

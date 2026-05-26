@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendPushToUser } from "@/lib/push";
 
 export async function leaveChannel(channelId: string) {
   const supabase = await createClient();
@@ -54,6 +55,27 @@ export async function sendCheer(channelId: string, toUserId: string) {
     emoji: "👏",
   });
   if (error) return { error: error.message };
+
+  // Notify the cheered user. Fire-and-forget; never block the action on it.
+  const { data: senderProfile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
+  const { data: channel } = await supabase
+    .from("channels")
+    .select("name")
+    .eq("id", channelId)
+    .single();
+
+  sendPushToUser(toUserId, {
+    title: "👏 You got a cheer",
+    body: `${senderProfile?.display_name ?? "Someone"} cheered you in ${
+      channel?.name ?? "your channel"
+    }`,
+    url: `/app/channels/${channelId}`,
+    tag: `cheer-${channelId}`,
+  }).catch((e) => console.error("[cheer] push failed:", e));
 
   revalidatePath(`/app/channels/${channelId}`);
 }
