@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "./form";
 import { NotificationsToggle } from "./notifications-toggle";
+import { NudgeTest } from "./nudge-test";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,8 @@ export default async function SettingsPage() {
       <NotificationsToggle
         vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
+
+      <NudgeTest />
     </main>
   );
 }
