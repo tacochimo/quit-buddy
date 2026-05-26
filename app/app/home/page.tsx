@@ -1,29 +1,161 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import {
+  computeSavings,
+  computeStreak,
+  earnedMilestones,
+  MILESTONES,
+  milestoneKind,
+} from "@/lib/streak";
 import { SignOutButton } from "./sign-out-button";
+import { RelapseButton, RestartButton } from "./relapse-button";
+import { awardMilestoneStars } from "./actions";
+
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select(
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack",
+    )
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.quit_date) redirect("/app/onboarding");
+
+  const { data: latestEvent } = await supabase
+    .from("streak_events")
+    .select("type, occurred_at")
+    .eq("user_id", user.id)
+    .order("occurred_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const streak = computeStreak(
+    latestEvent as { type: "quit" | "relapse"; occurred_at: string } | null,
+  );
+
+  const days = streak.kind === "quit" ? streak.days : 0;
+  const savings = computeSavings({
+    days,
+    cigsPerDay: profile.baseline_cigs_per_day,
+    costPerPack: profile.cost_per_pack,
+    cigsPerPack: profile.cigs_per_pack,
+  });
+
+  // Fire-and-forget on every load — idempotent.
+  if (streak.kind === "quit" && days > 0) {
+    await awardMilestoneStars(days);
+  }
+
+  const { data: starsData } = await supabase
+    .from("stars")
+    .select("kind, awarded_at")
+    .eq("user_id", user.id)
+    .is("channel_id", null);
+
+  const earnedKinds = new Set((starsData ?? []).map((s) => s.kind));
+  const nextMilestone =
+    MILESTONES.find((m) => !earnedKinds.has(milestoneKind(m))) ?? null;
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Quit Buddy</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Quit Buddy</h1>
+          <p className="text-sm text-neutral-500">
+            Hi, {profile.display_name}
+          </p>
+        </div>
         <SignOutButton />
       </header>
 
-      <section className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-800">
-        <p className="text-sm text-neutral-500">Signed in as</p>
-        <p className="font-medium">{user?.email}</p>
-      </section>
+      {streak.kind === "quit" ? (
+        <>
+          <section className="rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-8 text-white">
+            <p className="text-sm opacity-80">Smoke-free for</p>
+            <p className="mt-1 text-6xl font-bold tabular-nums">
+              {days}
+              <span className="ml-2 text-2xl font-normal opacity-80">
+                {days === 1 ? "day" : "days"}
+              </span>
+            </p>
+            {nextMilestone && (
+              <p className="mt-4 text-sm opacity-80">
+                {nextMilestone - days}{" "}
+                {nextMilestone - days === 1 ? "day" : "days"} to your next star
+                ({nextMilestone}-day milestone)
+              </p>
+            )}
+          </section>
 
-      <section className="rounded-2xl bg-emerald-50 p-6 dark:bg-emerald-950/40">
-        <p className="text-sm text-emerald-700 dark:text-emerald-400">
-          Day counter, channels, leaderboard, and stars get built next.
-        </p>
-      </section>
+          <section className="grid grid-cols-2 gap-3">
+            <Stat
+              label="Money saved"
+              value={`$${savings.moneySaved.toFixed(2)}`}
+            />
+            <Stat
+              label="Cigs avoided"
+              value={savings.cigsAvoided.toLocaleString()}
+            />
+          </section>
+
+          <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+              Stars earned
+            </h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {earnedMilestones(days).length === 0 ? (
+                <p className="text-sm text-neutral-500">
+                  Your first star lands at day 1.
+                </p>
+              ) : (
+                earnedMilestones(days).map((m) => (
+                  <span
+                    key={m}
+                    className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900 dark:bg-amber-900/30 dark:text-amber-200"
+                  >
+                    ⭐ {m}d
+                  </span>
+                ))
+              )}
+            </div>
+          </section>
+
+          <div className="mt-2 flex justify-center">
+            <RelapseButton canRelapse />
+          </div>
+        </>
+      ) : (
+        <section className="flex flex-col gap-4 rounded-3xl border border-neutral-200 p-8 text-center dark:border-neutral-800">
+          <p className="text-5xl">🌱</p>
+          <h2 className="text-xl font-semibold">Day 0</h2>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            It&apos;s okay. Every quit starts here. Ready to begin again?
+          </p>
+          <div className="mt-2 flex justify-center">
+            <RestartButton />
+          </div>
+        </section>
+      )}
     </main>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+      <p className="text-xs uppercase tracking-wide text-neutral-500">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
+    </div>
   );
 }
