@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { joinChannel } from "../actions";
 
-export function JoinChannelForm() {
+export function JoinChannelForm({ defaultCode = "" }: { defaultCode?: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +23,7 @@ export function JoinChannelForm() {
           type="text"
           name="code"
           required
+          defaultValue={defaultCode.toUpperCase()}
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}

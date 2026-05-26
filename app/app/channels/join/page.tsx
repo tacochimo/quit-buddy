@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { JoinChannelForm } from "./form";
 
-export default function JoinChannelPage() {
+export default async function JoinChannelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  const { code } = await searchParams;
+
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-6 py-12">
       <header>
@@ -17,7 +23,7 @@ export default function JoinChannelPage() {
         </p>
       </header>
 
-      <JoinChannelForm />
+      <JoinChannelForm defaultCode={code ?? ""} />
     </main>
   );
 }

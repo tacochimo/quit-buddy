@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { computeStreak } from "@/lib/streak";
+import { ShareButton } from "./share-button";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +93,12 @@ export default async function ChannelPage({
             You&apos;re ranked #{myRank} of {rows.length}
           </p>
         )}
+        <div className="mt-4">
+          <ShareButton
+            channelName={channel.name}
+            inviteCode={channel.invite_code}
+          />
+        </div>
       </header>
 
       <section className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800">
