@@ -208,6 +208,12 @@ export default async function HomePage() {
               hint="Calm a craving"
             />
             <Tool
+              href="/app/game"
+              icon="🎮"
+              label="Distract"
+              hint="Play through it"
+            />
+            <Tool
               href="/app/health"
               icon="📈"
               label="Health"

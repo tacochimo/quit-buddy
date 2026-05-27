@@ -42,6 +42,26 @@ export default async function CravingsPage() {
         </p>
       </header>
 
+      <section className="flex flex-col gap-2 rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          Right now
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            href="/app/breathe"
+            className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            🌬 Breathe
+          </Link>
+          <Link
+            href="/app/game"
+            className="flex items-center justify-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+          >
+            🎮 Distract
+          </Link>
+        </div>
+      </section>
+
       <LogCravingForm />
 
       {insights.total >= 4 && <InsightsPanel insights={insights} />}
