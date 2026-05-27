@@ -6,6 +6,7 @@ import {
   endRegimen,
   logDose,
   logSideEffect,
+  setReminders,
 } from "./actions";
 
 const KIND_LABELS: Record<string, string> = {
@@ -139,6 +140,104 @@ export function AddRegimenForm() {
           type="button"
           onClick={() => setOpen(false)}
           className="rounded-lg border border-neutral-300 px-4 py-2 text-sm transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+        >
+          Cancel
+        </button>
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+    </form>
+  );
+}
+
+export function ReminderControls({
+  regimenId,
+  schedule,
+  enabled,
+  times,
+}: {
+  regimenId: string;
+  schedule: "daily" | "twice-daily" | "prn";
+  enabled: boolean;
+  times: string[];
+}) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  if (schedule === "prn") return null;
+
+  const summary =
+    enabled && times.length > 0
+      ? times.join(", ")
+      : enabled
+        ? "on, no times set"
+        : "off";
+
+  function onSubmit(formData: FormData) {
+    setError(null);
+    startTransition(async () => {
+      const r = await setReminders(formData);
+      if (r?.error) setError(r.error);
+      else setOpen(false);
+    });
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="text-xs text-neutral-500 underline hover:text-neutral-700 dark:hover:text-neutral-300"
+      >
+        Reminders: {summary}
+      </button>
+    );
+  }
+
+  const defaultTimes =
+    times.length > 0
+      ? times.join(", ")
+      : schedule === "twice-daily"
+        ? "09:00, 21:00"
+        : "09:00";
+
+  return (
+    <form
+      action={onSubmit}
+      className="flex flex-col gap-2 rounded-lg border border-neutral-300 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-900"
+    >
+      <input type="hidden" name="id" value={regimenId} />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="enabled"
+          defaultChecked={enabled}
+          className="h-4 w-4 accent-emerald-600"
+        />
+        Push reminders for this regimen
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-xs text-neutral-500">
+          Times (24h, comma-separated, up to 4) — uses your timezone
+        </span>
+        <input
+          name="times"
+          defaultValue={defaultTimes}
+          placeholder="09:00, 21:00"
+          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-950"
+        />
+      </label>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={pending}
+          className="flex-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+        >
+          {pending ? "Saving…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
         >
           Cancel
         </button>

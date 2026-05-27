@@ -16,6 +16,7 @@ import { ActiveSOSBanner, SOSButton } from "./sos-button";
 import { getWithdrawalStage } from "@/lib/withdrawal";
 import { computeInsights } from "@/lib/craving-insights";
 import { getTriggerPlans, isInPeakWindow } from "@/lib/trigger-plans";
+import { TimezoneCapture } from "./timezone-capture";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function HomePage() {
   const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select(
-      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons",
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, timezone",
     )
     .eq("id", user.id)
     .single();
@@ -153,6 +154,7 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
+      <TimezoneCapture needs={!profile.timezone} />
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Quit Buddy</h1>

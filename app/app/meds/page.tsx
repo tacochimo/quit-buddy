@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/activity";
-import { AddRegimenForm, RegimenActions } from "./forms";
+import { AddRegimenForm, RegimenActions, ReminderControls } from "./forms";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,8 @@ type Regimen = {
   started_on: string;
   ended_on: string | null;
   notes: string | null;
+  reminder_enabled: boolean;
+  reminder_times: string[];
 };
 
 type Event = {
@@ -42,7 +44,7 @@ export default async function MedsPage() {
     supabase
       .from("med_regimens")
       .select(
-        "id, name, kind, dose_mg, schedule, started_on, ended_on, notes",
+        "id, name, kind, dose_mg, schedule, started_on, ended_on, notes, reminder_enabled, reminder_times",
       )
       .eq("user_id", user.id)
       .order("started_on", { ascending: false }),
@@ -106,6 +108,12 @@ export default async function MedsPage() {
                   )}
                 </div>
                 <RegimenActions regimenId={r.id} schedule={r.schedule} />
+                <ReminderControls
+                  regimenId={r.id}
+                  schedule={r.schedule}
+                  enabled={r.reminder_enabled}
+                  times={r.reminder_times ?? []}
+                />
               </li>
             ))}
           </ul>

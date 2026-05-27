@@ -104,6 +104,35 @@ export async function logDose(formData: FormData): Promise<ActionResult> {
   revalidatePath("/app/meds");
 }
 
+export async function setReminders(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { error: "Missing id." };
+  const enabled = formData.get("enabled") === "on";
+  const timesRaw = String(formData.get("times") ?? "");
+  const times = timesRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => /^\d{1,2}:\d{2}$/.test(s))
+    .slice(0, 4);
+
+  const { error } = await supabase
+    .from("med_regimens")
+    .update({
+      reminder_enabled: enabled,
+      reminder_times: times,
+    })
+    .eq("user_id", user.id)
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/app/meds");
+}
+
 export async function logSideEffect(
   formData: FormData,
 ): Promise<ActionResult> {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runNudges } from "@/lib/nudge-runner";
+import { runMedReminders } from "@/lib/med-reminders";
 
 // Vercel sets a CRON_SECRET when cron jobs are configured. We require it in
 // prod; locally (no secret) the route is callable for testing.
@@ -17,6 +18,9 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const result = await runNudges(admin);
-  return NextResponse.json(result);
+  const [nudges, medReminders] = await Promise.all([
+    runNudges(admin),
+    runMedReminders(admin),
+  ]);
+  return NextResponse.json({ nudges, medReminders });
 }
