@@ -9,6 +9,7 @@ import { RealtimeRefresher } from "./realtime-refresher";
 import { ManageButton } from "./manage-button";
 import { CopyCode } from "./copy-code";
 import { RenameChannel } from "./rename-form";
+import { ChannelChat, type ChatMessage } from "./channel-chat";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,28 @@ export default async function ChannelPage({
     .order("created_at", { ascending: false })
     .limit(20);
   const sos = sosData ?? [];
+
+  // Chat messages (latest 50; rendered ascending).
+  const { data: chatRaw } = await supabase
+    .from("channel_messages")
+    .select("id, user_id, content, created_at, profiles!inner(display_name)")
+    .eq("channel_id", id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const chatMessages: ChatMessage[] = (chatRaw ?? [])
+    .map((m) => {
+      const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+      return {
+        id: m.id,
+        user_id: m.user_id,
+        display_name:
+          (p as { display_name?: string } | null)?.display_name ?? "—",
+        content: m.content,
+        created_at: m.created_at,
+      };
+    })
+    .reverse();
 
   // Cheer counts received per member in this channel.
   const { data: reactionsData } = await supabase
@@ -250,6 +273,12 @@ export default async function ChannelPage({
           </ul>
         )}
       </section>
+
+      <ChannelChat
+        channelId={channel.id}
+        currentUserId={user.id}
+        messages={chatMessages}
+      />
 
       <div className="mt-2 flex justify-center">
         <ManageButton

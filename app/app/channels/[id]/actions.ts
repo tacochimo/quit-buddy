@@ -62,6 +62,26 @@ export async function deleteChannel(channelId: string) {
   redirect("/app/home");
 }
 
+export async function sendChannelMessage(channelId: string, content: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const trimmed = content.trim().slice(0, 1000);
+  if (!trimmed) return { error: "Type something first." };
+
+  const { error } = await supabase.from("channel_messages").insert({
+    channel_id: channelId,
+    user_id: user.id,
+    content: trimmed,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/app/channels/${channelId}`);
+}
+
 export async function sendCheer(channelId: string, toUserId: string) {
   const supabase = await createClient();
   const {
