@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { SnakeBoard } from "./board";
+import { SliceBoard } from "./board";
 
-export default function SnakePage() {
+export default function SlicePage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
       <header>
@@ -11,16 +11,17 @@ export default function SnakePage() {
         >
           ← Home
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Snake</h1>
+        <h1 className="mt-2 text-2xl font-bold">Slice</h1>
         <p className="mt-2 text-sm text-neutral-500">
-          Eat the dot. Don&apos;t bite yourself. Don&apos;t hit the wall.
+          Swipe through the fruit. Miss too many — or hit a bomb — and you&apos;re out.
+          60 seconds.
         </p>
       </header>
 
-      <SnakeBoard />
+      <SliceBoard />
 
       <p className="text-center text-xs text-neutral-500">
-        Swipe, tap a D-pad arrow, or use the arrow / WASD keys.
+        Drag across the canvas to slice. Combo bonuses for slicing multiple in one swipe.
       </p>
 
       <p className="text-center text-xs text-neutral-500">
@@ -28,14 +29,14 @@ export default function SnakePage() {
           href="/app/game"
           className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
         >
-          Runner
+          ← Runner
         </Link>
         {" · "}
         <Link
-          href="/app/slice"
+          href="/app/snake"
           className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
         >
-          Slice
+          Snake
         </Link>
       </p>
     </main>

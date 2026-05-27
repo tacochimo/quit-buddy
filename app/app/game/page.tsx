@@ -24,8 +24,18 @@ export default function GamePage() {
       </p>
 
       <p className="text-center text-xs text-neutral-500">
-        <Link href="/app/snake" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">
-          Or try Snake →
+        <Link
+          href="/app/snake"
+          className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+        >
+          Snake
+        </Link>
+        {" · "}
+        <Link
+          href="/app/slice"
+          className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+        >
+          Slice
         </Link>
       </p>
     </main>
