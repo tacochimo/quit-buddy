@@ -122,6 +122,12 @@ function fmtCurrency(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
+function scheduleLabel(s: "daily" | "twice-daily" | "prn"): string {
+  if (s === "daily") return "Daily";
+  if (s === "twice-daily") return "Twice daily";
+  return "As needed";
+}
+
 export function ReportDocument({ data }: { data: ReportData }) {
   const streakLine =
     data.streak.kind === "quit"
@@ -227,6 +233,66 @@ export function ReportDocument({ data }: { data: ReportData }) {
               : data.milestones.map((d) => `${d}d`).join(" · ")}
           </Text>
         </View>
+
+        {/* MEDICATIONS */}
+        {(data.meds.active.length > 0 ||
+          data.meds.past.length > 0 ||
+          data.meds.sideEffects.length > 0) && (
+          <>
+            <Text style={styles.sectionHeading}>Medications &amp; NRT</Text>
+            {data.meds.active.length === 0 ? (
+              <Text style={styles.paragraph}>None currently active.</Text>
+            ) : (
+              data.meds.active.map((m, i) => (
+                <View key={i} style={styles.row}>
+                  <Text style={styles.label}>{m.name}</Text>
+                  <Text style={styles.value}>
+                    {scheduleLabel(m.schedule)}
+                    {m.doseMg != null ? ` · ${m.doseMg} mg` : ""}
+                    {" · "}
+                    {m.daysOn} day{m.daysOn === 1 ? "" : "s"} on
+                    {m.adherencePct != null
+                      ? ` · ${m.adherencePct}% adherence (30d)`
+                      : m.schedule === "prn"
+                        ? ` · ${m.prnTotal30d} doses in last 30d`
+                        : ""}
+                  </Text>
+                </View>
+              ))
+            )}
+            {data.meds.past.length > 0 && (
+              <>
+                <Text style={[styles.metricLabel, { marginTop: 6 }]}>
+                  Past regimens
+                </Text>
+                {data.meds.past.map((m, i) => (
+                  <View key={i} style={styles.bullet}>
+                    <Text style={styles.bulletDot}>•</Text>
+                    <Text style={styles.value}>
+                      {m.name} ({DATE_FMT.format(m.startedOn)} →{" "}
+                      {DATE_FMT.format(m.endedOn)})
+                    </Text>
+                  </View>
+                ))}
+              </>
+            )}
+            {data.meds.sideEffects.length > 0 && (
+              <>
+                <Text style={[styles.metricLabel, { marginTop: 6 }]}>
+                  Reported side effects (last 30d)
+                </Text>
+                {data.meds.sideEffects.map((s, i) => (
+                  <View key={i} style={styles.bullet}>
+                    <Text style={styles.bulletDot}>•</Text>
+                    <Text style={styles.value}>
+                      {s.label} — {s.count} time{s.count === 1 ? "" : "s"}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            )}
+          </>
+        )}
 
         {/* CRAVINGS */}
         <Text style={styles.sectionHeading}>Craving log</Text>

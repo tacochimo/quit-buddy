@@ -33,6 +33,20 @@ export type ReportData = {
     avgIntensity: number | null;
     insights: ReturnType<typeof computeInsights>;
   };
+  meds: {
+    active: Array<{
+      name: string;
+      kind: string;
+      doseMg: number | null;
+      schedule: "daily" | "twice-daily" | "prn";
+      startedOn: Date;
+      daysOn: number;
+      adherencePct: number | null; // null for prn or short windows
+      prnTotal30d: number; // 0 unless schedule === 'prn'
+    }>;
+    past: Array<{ name: string; startedOn: Date; endedOn: Date }>;
+    sideEffects: Array<{ label: string; count: number }>;
+  };
   milestones: number[]; // achieved milestone day-counts, sorted ascending
 };
 
@@ -45,7 +59,18 @@ export async function buildReport(userId: string): Promise<ReportData | null> {
   } = await supabase.auth.getUser();
   if (!user || user.id !== userId) return null;
 
-  const [profileRes, eventsRes, cravingsRes, starsRes] = await Promise.all([
+  const thirtyDaysAgoIso = new Date(
+    Date.now() - 30 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  const [
+    profileRes,
+    eventsRes,
+    cravingsRes,
+    starsRes,
+    regimensRes,
+    medEventsRes,
+  ] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -73,6 +98,16 @@ export async function buildReport(userId: string): Promise<ReportData | null> {
       .select("kind")
       .eq("user_id", userId)
       .is("channel_id", null),
+    supabase
+      .from("med_regimens")
+      .select("id, name, kind, dose_mg, schedule, started_on, ended_on")
+      .eq("user_id", userId)
+      .order("started_on", { ascending: false }),
+    supabase
+      .from("med_events")
+      .select("regimen_id, occurred_at, kind, count, side_effect")
+      .eq("user_id", userId)
+      .gte("occurred_at", thirtyDaysAgoIso),
   ]);
 
   const profile = profileRes.data;
@@ -148,6 +183,82 @@ export async function buildReport(userId: string): Promise<ReportData | null> {
     })
     .filter((n): n is number => n !== null);
 
+  // Meds: split active vs past; compute adherence over the report window.
+  const regimens = regimensRes.data ?? [];
+  const medEvents = medEventsRes.data ?? [];
+  const now = Date.now();
+
+  const sideEffectCounts = new Map<string, number>();
+  for (const ev of medEvents) {
+    if (ev.kind === "side_effect" && ev.side_effect) {
+      sideEffectCounts.set(
+        ev.side_effect,
+        (sideEffectCounts.get(ev.side_effect) ?? 0) + 1,
+      );
+    }
+  }
+
+  const active = regimens
+    .filter((r) => !r.ended_on)
+    .map((r) => {
+      const started = new Date(r.started_on);
+      const daysOn = Math.max(
+        1,
+        Math.floor((now - started.getTime()) / (1000 * 60 * 60 * 24)) + 1,
+      );
+      // Adherence window = intersection of [started, now] and [30d ago, now].
+      const windowStart = Math.max(
+        started.getTime(),
+        now - 30 * 24 * 60 * 60 * 1000,
+      );
+      const windowDays = Math.max(
+        1,
+        Math.ceil((now - windowStart) / (1000 * 60 * 60 * 24)),
+      );
+      const myDoseEvents = medEvents.filter(
+        (ev) =>
+          ev.regimen_id === r.id &&
+          ev.kind === "dose" &&
+          new Date(ev.occurred_at).getTime() >= windowStart,
+      );
+      const totalDoses = myDoseEvents.reduce(
+        (s, ev) => s + (ev.count ?? 1),
+        0,
+      );
+      const expectedPerDay =
+        r.schedule === "daily" ? 1 : r.schedule === "twice-daily" ? 2 : 0;
+      const adherencePct =
+        expectedPerDay > 0 && windowDays >= 2
+          ? Math.min(
+              100,
+              Math.round((totalDoses / (expectedPerDay * windowDays)) * 100),
+            )
+          : null;
+      return {
+        name: r.name,
+        kind: r.kind,
+        doseMg: r.dose_mg,
+        schedule: r.schedule as "daily" | "twice-daily" | "prn",
+        startedOn: started,
+        daysOn,
+        adherencePct,
+        prnTotal30d: r.schedule === "prn" ? totalDoses : 0,
+      };
+    });
+
+  const past = regimens
+    .filter((r) => r.ended_on)
+    .map((r) => ({
+      name: r.name,
+      startedOn: new Date(r.started_on),
+      endedOn: new Date(r.ended_on as string),
+    }));
+
+  const sideEffects = [...sideEffectCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([label, count]) => ({ label, count }));
+
   return {
     generatedAt: new Date(),
     patient: {
@@ -172,6 +283,7 @@ export async function buildReport(userId: string): Promise<ReportData | null> {
       avgIntensity,
       insights: computeInsights(cravings),
     },
+    meds: { active, past, sideEffects },
     milestones: [...new Set(milestoneDays)].sort((a, b) => a - b),
   };
 }

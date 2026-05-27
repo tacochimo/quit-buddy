@@ -235,6 +235,12 @@ export default async function HomePage() {
               label="Buddy"
               hint="One person, in your corner"
             />
+            <Tool
+              href="/app/meds"
+              icon="💊"
+              label="Meds"
+              hint="Track NRT + doses"
+            />
           </section>
 
           <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
