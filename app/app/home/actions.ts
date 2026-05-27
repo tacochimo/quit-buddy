@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MILESTONES, milestoneKind } from "@/lib/streak";
-import { notifyBuddyOfRelapse } from "@/lib/buddy";
 
 async function getUserOrRedirect() {
   const supabase = await createClient();
@@ -13,22 +12,6 @@ async function getUserOrRedirect() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return { supabase, user };
-}
-
-export async function recordRelapse() {
-  const { supabase, user } = await getUserOrRedirect();
-
-  const { error } = await supabase.from("streak_events").insert({
-    user_id: user.id,
-    type: "relapse",
-    occurred_at: new Date().toISOString(),
-  });
-  if (error) return { error: error.message };
-
-  // Highest-stakes buddy ping — louder copy, never throws into this path.
-  await notifyBuddyOfRelapse(user.id);
-
-  revalidatePath("/app/home");
 }
 
 export async function restartStreak() {

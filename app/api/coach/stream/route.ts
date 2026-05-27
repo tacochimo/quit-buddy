@@ -9,6 +9,7 @@ import {
   getMonthlyCostUsd,
   recordUsage,
 } from "@/lib/ai-usage";
+import { getRecentSlipContext } from "@/lib/slip-context";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -72,35 +73,37 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Load context (profile + latest streak + history + craving patterns).
-  const [profileRes, latestRes, historyRes, cravingsRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select(
-        "display_name, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, coach_persona",
-      )
-      .eq("id", user.id)
-      .single(),
-    supabase
-      .from("streak_events")
-      .select("type, occurred_at")
-      .eq("user_id", user.id)
-      .order("occurred_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("chat_messages")
-      .select("role, content")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .limit(20),
-    supabase
-      .from("cravings")
-      .select("intensity, trigger, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(200),
-  ]);
+  // Load context (profile + latest streak + history + craving patterns + recent slip).
+  const [profileRes, latestRes, historyRes, cravingsRes, recentSlip] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "display_name, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, coach_persona",
+        )
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("streak_events")
+        .select("type, occurred_at")
+        .eq("user_id", user.id)
+        .order("occurred_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("chat_messages")
+        .select("role, content")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(20),
+      supabase
+        .from("cravings")
+        .select("intensity, trigger, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      getRecentSlipContext(supabase, user.id),
+    ]);
 
   const profile = profileRes.data;
   if (!profile) {
@@ -132,6 +135,7 @@ export async function POST(request: NextRequest) {
     moneySaved: savings.moneySaved,
     persona: getPersona(profile.coach_persona),
     cravingInsights,
+    recentSlip,
   };
 
   const history = (historyRes.data ?? []).map((m) => ({

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { type Persona } from "./personas";
+import { type RecentSlip, slipContextLines } from "./slip-context";
 
 // Provider isolation lives here. To swap to Anthropic later, replace this
 // module — keep the same exported signature.
@@ -29,6 +30,8 @@ export type CoachContext = {
   // One-line summary of the user's craving patterns (peak window, top
   // trigger, intensity trend) — null when there isn't enough log data.
   cravingInsights: string | null;
+  // Most recent slip or relapse within the last 24h, if any.
+  recentSlip: RecentSlip | null;
 };
 
 export function buildSystemPrompt(ctx: CoachContext): string {
@@ -75,6 +78,10 @@ export function buildSystemPrompt(ctx: CoachContext): string {
       "CRAVING PATTERNS (from their own logs — reference naturally, do not list back):",
       ctx.cravingInsights,
     );
+  }
+
+  if (ctx.recentSlip) {
+    lines.push("", ...slipContextLines(ctx.recentSlip));
   }
 
   // Persona voice — concrete do/don'ts that lock in tone.
