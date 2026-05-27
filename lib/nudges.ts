@@ -112,7 +112,7 @@ Write a SHORT (1-2 sentences) opener. Rules:
   const response = await openai.chat.completions.create({
     model: MODEL,
     max_completion_tokens: 150,
-    temperature: 0.8,
+    temperature: args.persona.temperature ?? 0.8,
     messages: [{ role: "user", content: prompt }],
   });
 
