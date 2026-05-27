@@ -219,6 +219,12 @@ export default async function HomePage() {
               label="Cravings"
               hint="Log + patterns"
             />
+            <Tool
+              href="/app/buddy"
+              icon="🫂"
+              label="Buddy"
+              hint="One person, in your corner"
+            />
           </section>
 
           <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">

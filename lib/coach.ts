@@ -26,6 +26,9 @@ export type CoachContext = {
   cigsPerDay: number | null;
   moneySaved: number;
   persona: Persona;
+  // One-line summary of the user's craving patterns (peak window, top
+  // trigger, intensity trend) — null when there isn't enough log data.
+  cravingInsights: string | null;
 };
 
 export function buildSystemPrompt(ctx: CoachContext): string {
@@ -63,6 +66,14 @@ export function buildSystemPrompt(ctx: CoachContext): string {
   if (ctx.moneySaved > 0) {
     lines.push(
       `They've saved $${ctx.moneySaved.toFixed(2)} (was ${ctx.cigsPerDay ?? "their usual"} cigs/day).`,
+    );
+  }
+
+  if (ctx.cravingInsights) {
+    lines.push(
+      "",
+      "CRAVING PATTERNS (from their own logs — reference naturally, do not list back):",
+      ctx.cravingInsights,
     );
   }
 

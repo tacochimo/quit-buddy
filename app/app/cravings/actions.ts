@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { notifyBuddyOfCraving } from "@/lib/buddy";
 
 export async function logCraving(formData: FormData) {
   const supabase = await createClient();
@@ -22,6 +23,9 @@ export async function logCraving(formData: FormData) {
     .from("cravings")
     .insert({ user_id: user.id, intensity, trigger, note });
   if (error) return { error: error.message };
+
+  // Fire-and-forget buddy ping. Helper handles "no buddy" + threshold.
+  await notifyBuddyOfCraving(user.id, intensity);
 
   revalidatePath("/app/cravings");
 }

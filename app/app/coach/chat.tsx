@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };
@@ -20,12 +20,15 @@ export function CoachChat({
   disabled: boolean;
 }) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
   const [input, setInput] = useState("");
   const [pending, setPending] = useState<{ user: string; assistant: string } | null>(
     null,
   );
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const visible: Msg[] = pending
     ? [
@@ -35,12 +38,29 @@ export function CoachChat({
       ]
     : initialMessages;
 
+  // Smooth scroll only on send/initial; auto (no animation) during streaming
+  // so each token doesn't trigger a new animation that fights the next one.
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: pending ? "auto" : "smooth",
     });
-  }, [visible.length, pending?.assistant]);
+  }, [visible.length, pending?.assistant, pending]);
+
+  // Autosize the textarea up to ~5 lines.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [input]);
+
+  function stop() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -50,11 +70,15 @@ export function CoachChat({
     setInput("");
     setPending({ user: trimmed, assistant: "" });
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const response = await fetch("/api/coach/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -73,14 +97,39 @@ export function CoachChat({
         setPending({ user: trimmed, assistant: accumulated });
       }
 
-      // Stream done — server has persisted; refresh to sync.
-      setPending(null);
-      router.refresh();
+      // Stream done — server has persisted. Refresh inside a transition so
+      // the optimistic pending UI stays mounted until the new RSC payload
+      // arrives (no flicker between pending and committed messages).
+      startTransition(() => {
+        router.refresh();
+        setPending(null);
+      });
     } catch (e: unknown) {
-      const msg = (e as Error).message ?? String(e);
-      setError(msg);
-      setInput(trimmed);
-      setPending(null);
+      const aborted =
+        (e as { name?: string }).name === "AbortError" ||
+        controller.signal.aborted;
+      if (aborted) {
+        // User stopped. Server-side generation may still complete and persist
+        // — refresh to pick it up.
+        startTransition(() => {
+          router.refresh();
+          setPending(null);
+        });
+      } else {
+        const msg = (e as Error).message ?? String(e);
+        setError(msg);
+        setInput(trimmed);
+        setPending(null);
+      }
+    } finally {
+      abortRef.current = null;
+    }
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      send(input);
     }
   }
 
@@ -138,24 +187,40 @@ export function CoachChat({
           e.preventDefault();
           send(input);
         }}
-        className="mt-3 flex gap-2"
+        className="mt-3 flex items-end gap-2"
       >
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
+          rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
           disabled={disabled || pending !== null}
-          placeholder={disabled ? "Coach disabled" : "Type a message…"}
+          placeholder={
+            disabled
+              ? "Coach disabled"
+              : "Type a message…  (Enter to send, Shift+Enter for newline)"
+          }
           maxLength={1000}
-          className="flex-1 rounded-full border border-neutral-300 bg-white px-4 py-3 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          className="flex-1 resize-none rounded-3xl border border-neutral-300 bg-white px-4 py-3 text-sm leading-5 dark:border-neutral-700 dark:bg-neutral-900"
         />
-        <button
-          type="submit"
-          disabled={disabled || pending !== null || !input.trim()}
-          className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-        >
-          Send
-        </button>
+        {pending ? (
+          <button
+            type="button"
+            onClick={stop}
+            className="rounded-full bg-neutral-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-900 dark:bg-neutral-200 dark:text-neutral-900 dark:hover:bg-white"
+          >
+            Stop
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={disabled || !input.trim()}
+            className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+          >
+            Send
+          </button>
+        )}
       </form>
     </>
   );

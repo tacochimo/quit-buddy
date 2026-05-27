@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { type CoachContext, generateCoachReplyStream } from "@/lib/coach";
 import { computeSavings, computeStreak } from "@/lib/streak";
 import { getPersona } from "@/lib/personas";
+import { computeInsights, insightsForCoach } from "@/lib/craving-insights";
 import {
   getMonthlyBudgetUsd,
   getMonthlyCostUsd,
@@ -13,12 +14,6 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const DAILY_LIMIT = Number(process.env.COACH_DAILY_LIMIT ?? 30);
-
-function startOfUtcDayIso(): string {
-  const d = new Date();
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString();
-}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -43,23 +38,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Type a message first." }, { status: 400 });
   }
 
-  // Daily message cap.
-  const { count: usedToday } = await supabase
-    .from("chat_messages")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("role", "user")
-    .gte("created_at", startOfUtcDayIso());
-  if ((usedToday ?? 0) >= DAILY_LIMIT) {
-    return NextResponse.json(
-      {
-        error: `You've used your ${DAILY_LIMIT} coach messages for today. Resets at UTC midnight.`,
-      },
-      { status: 429 },
-    );
-  }
-
-  // Monthly $ budget.
+  // Monthly $ budget — checked first because it's a hard ceiling regardless
+  // of remaining daily slots.
   const budget = getMonthlyBudgetUsd();
   if (budget > 0) {
     const spent = await getMonthlyCostUsd(supabase, user.id);
@@ -73,8 +53,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Load context (profile + latest streak + history).
-  const [profileRes, latestRes, historyRes] = await Promise.all([
+  // Atomic daily-quota reservation. Returns the new used count, or null if
+  // already at limit. Race-free under concurrent requests.
+  const { data: quotaUsed, error: quotaErr } = await supabase.rpc(
+    "consume_coach_quota",
+    { p_limit: DAILY_LIMIT },
+  );
+  if (quotaErr) {
+    console.error("[coach/stream] consume_coach_quota:", quotaErr);
+    return NextResponse.json({ error: "quota_error" }, { status: 500 });
+  }
+  if (quotaUsed === null) {
+    return NextResponse.json(
+      {
+        error: `You've used your ${DAILY_LIMIT} coach messages for today. Resets at UTC midnight.`,
+      },
+      { status: 429 },
+    );
+  }
+
+  // Load context (profile + latest streak + history + craving patterns).
+  const [profileRes, latestRes, historyRes, cravingsRes] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -95,10 +94,17 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .order("created_at", { ascending: true })
       .limit(20),
+    supabase
+      .from("cravings")
+      .select("intensity, trigger, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
 
   const profile = profileRes.data;
   if (!profile) {
+    await supabase.rpc("refund_coach_quota");
     return NextResponse.json({ error: "profile_missing" }, { status: 400 });
   }
 
@@ -113,6 +119,10 @@ export async function POST(request: NextRequest) {
     cigsPerPack: profile.cigs_per_pack,
   });
 
+  const cravingInsights = insightsForCoach(
+    computeInsights(cravingsRes.data ?? []),
+  );
+
   const context: CoachContext = {
     displayName: profile.display_name,
     streakDays: days,
@@ -121,6 +131,7 @@ export async function POST(request: NextRequest) {
     cigsPerDay: profile.baseline_cigs_per_day,
     moneySaved: savings.moneySaved,
     persona: getPersona(profile.coach_persona),
+    cravingInsights,
   };
 
   const history = (historyRes.data ?? []).map((m) => ({
@@ -128,31 +139,53 @@ export async function POST(request: NextRequest) {
     content: m.content,
   }));
 
-  // Stream the reply. Persist + record usage once the stream completes.
+  // Persist the user message up front so a mid-stream disconnect doesn't
+  // lose it. Assistant row is inserted at stream end (or never, on error).
+  const { data: userRow, error: userInsertErr } = await supabase
+    .from("chat_messages")
+    .insert({ user_id: user.id, role: "user", content: message })
+    .select("id")
+    .single();
+  if (userInsertErr || !userRow) {
+    console.error("[coach/stream] user insert:", userInsertErr);
+    await supabase.rpc("refund_coach_quota");
+    return NextResponse.json({ error: "persist_failed" }, { status: 500 });
+  }
+
+  // Stream the reply. Persist assistant row + record usage once complete.
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      let clientGone = false;
       try {
         const result = await generateCoachReplyStream({
           context,
           history,
           userMessage: message,
           onText: (chunk) => {
+            if (clientGone) return;
             try {
               controller.enqueue(encoder.encode(chunk));
             } catch {
-              // client disconnected — stop pushing chunks.
+              clientGone = true;
             }
           },
         });
 
-        const { error: insertErr } = await supabase
-          .from("chat_messages")
-          .insert([
-            { user_id: user.id, role: "user", content: message },
-            { user_id: user.id, role: "assistant", content: result.reply },
-          ]);
-        if (insertErr) console.error("[coach/stream] insert:", insertErr);
+        // Persist assistant reply even if client disconnected — refresh will
+        // show it. Refund quota only if generation produced nothing.
+        if (result.reply.trim().length === 0) {
+          await supabase.rpc("refund_coach_quota");
+        } else {
+          const { error: insertErr } = await supabase
+            .from("chat_messages")
+            .insert({
+              user_id: user.id,
+              role: "assistant",
+              content: result.reply,
+            });
+          if (insertErr) console.error("[coach/stream] assistant insert:", insertErr);
+        }
 
         await recordUsage({
           userId: user.id,
@@ -162,11 +195,17 @@ export async function POST(request: NextRequest) {
           completionTokens: result.usage.completionTokens,
         });
 
-        controller.close();
+        if (!clientGone) controller.close();
       } catch (e) {
         console.error("[coach/stream] generation error:", e);
-        controller.error(e);
+        // Generation failed entirely — refund the quota slot we reserved.
+        await supabase.rpc("refund_coach_quota");
+        if (!clientGone) controller.error(e);
       }
+    },
+    cancel() {
+      // Client aborted (e.g. Stop button or navigation). Generation in
+      // start() continues so the reply is still persisted.
     },
   });
 
