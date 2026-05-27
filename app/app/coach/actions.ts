@@ -8,6 +8,7 @@ import {
   generateCoachReply,
 } from "@/lib/coach";
 import { computeSavings, computeStreak } from "@/lib/streak";
+import { recordUsage } from "@/lib/ai-usage";
 
 const DAILY_LIMIT = Number(process.env.COACH_DAILY_LIMIT ?? 30);
 
@@ -110,8 +111,9 @@ export async function sendCoachMessage(message: string) {
   // Call OpenAI first. Only persist messages on success — keeps the chat
   // history clean when billing/quota/timeout errors hit.
   let reply: string;
+  let usage: { model: string; promptTokens: number; completionTokens: number };
   try {
-    reply = await generateCoachReply({
+    const result = await generateCoachReply({
       context,
       history: (historyRes.data ?? []).map((m) => ({
         role: m.role as "user" | "assistant",
@@ -119,6 +121,8 @@ export async function sendCoachMessage(message: string) {
       })),
       userMessage: trimmed,
     });
+    reply = result.reply;
+    usage = result.usage;
   } catch (e: unknown) {
     const err = e as { status?: number; message?: string };
     console.error("[coach] generation failed:", err);
@@ -144,6 +148,14 @@ export async function sendCoachMessage(message: string) {
     { user_id: user.id, role: "assistant", content: reply },
   ]);
   if (insertErr) return { error: insertErr.message };
+
+  await recordUsage({
+    userId: user.id,
+    source: "coach",
+    model: usage.model,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
+  });
 
   revalidatePath("/app/coach");
 }

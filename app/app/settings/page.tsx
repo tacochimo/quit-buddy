@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "./form";
 import { NotificationsToggle } from "./notifications-toggle";
 import { NudgeTest } from "./nudge-test";
+import { AIUsageCard } from "./ai-usage-card";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,8 @@ export default async function SettingsPage() {
       <NotificationsToggle
         vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
+
+      <AIUsageCard />
 
       <NudgeTest />
     </main>

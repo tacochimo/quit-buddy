@@ -2,6 +2,7 @@ import { createAdminClient } from "./supabase/admin";
 import { computeStreak } from "./streak";
 import { decideNudge, generateNudgeMessage } from "./nudges";
 import { sendPushToUser } from "./push";
+import { recordUsage } from "./ai-usage";
 
 export async function runNudges(
   admin: ReturnType<typeof createAdminClient>,
@@ -97,7 +98,7 @@ async function nudgeOneUser(
 
   if (!decision) return { kind: null, reason: "no_trigger" };
 
-  const message = await generateNudgeMessage({
+  const { message, usage } = await generateNudgeMessage({
     decision,
     displayName: profile.display_name,
     streakDays: streak.kind === "quit" ? streak.days : 0,
@@ -108,6 +109,14 @@ async function nudgeOneUser(
     user_id: userId,
     role: "assistant",
     content: message,
+  });
+
+  await recordUsage({
+    userId,
+    source: "nudge",
+    model: usage.model,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
   });
 
   await admin.from("nudges_sent").insert({

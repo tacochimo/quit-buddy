@@ -58,12 +58,18 @@ function getClient(): OpenAI {
   return client;
 }
 
+export type NudgeUsage = {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+};
+
 export async function generateNudgeMessage(args: {
   decision: NudgeDecision;
   displayName: string;
   streakDays: number;
   reasons: string | null;
-}): Promise<string> {
+}): Promise<{ message: string; usage: NudgeUsage }> {
   const ctx: string[] = [
     `User: ${args.displayName}`,
     `Days smoke-free: ${args.streakDays}`,
@@ -104,8 +110,14 @@ Write a SHORT (1-2 sentences) opener. Rules:
     messages: [{ role: "user", content: prompt }],
   });
 
-  return (
-    response.choices[0]?.message?.content?.trim() ??
-    "Just thinking of you. How's today going?"
-  );
+  return {
+    message:
+      response.choices[0]?.message?.content?.trim() ??
+      "Just thinking of you. How's today going?",
+    usage: {
+      model: MODEL,
+      promptTokens: response.usage?.prompt_tokens ?? 0,
+      completionTokens: response.usage?.completion_tokens ?? 0,
+    },
+  };
 }

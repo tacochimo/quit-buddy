@@ -87,11 +87,17 @@ export function buildSystemPrompt(ctx: CoachContext): string {
   return lines.join("\n");
 }
 
+export type Usage = {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+};
+
 export async function generateCoachReply(args: {
   context: CoachContext;
   history: ChatMessage[];
   userMessage: string;
-}): Promise<string> {
+}): Promise<{ reply: string; usage: Usage }> {
   const openai = getClient();
 
   const response = await openai.chat.completions.create({
@@ -105,8 +111,14 @@ export async function generateCoachReply(args: {
     ],
   });
 
-  return (
-    response.choices[0]?.message?.content?.trim() ??
-    "I'm here. Tell me more about what's going on."
-  );
+  return {
+    reply:
+      response.choices[0]?.message?.content?.trim() ??
+      "I'm here. Tell me more about what's going on.",
+    usage: {
+      model: MODEL,
+      promptTokens: response.usage?.prompt_tokens ?? 0,
+      completionTokens: response.usage?.completion_tokens ?? 0,
+    },
+  };
 }
