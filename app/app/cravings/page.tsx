@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/activity";
 import { LogCravingForm } from "./log-form";
 import { computeInsights, fmtHour } from "@/lib/craving-insights";
-import { getTriggerPlans } from "@/lib/trigger-plans";
+import { getTriggerPlans, effectivenessByTrigger } from "@/lib/trigger-plans";
 import { TriggerPlans } from "./plans";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export default async function CravingsPage() {
   // the most recent 50 below.
   const { data: cravingsData } = await supabase
     .from("cravings")
-    .select("id, intensity, trigger, note, created_at")
+    .select("id, intensity, trigger, note, plan_used, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -29,6 +29,10 @@ export default async function CravingsPage() {
   const insights = computeInsights(cravings);
   const recent = cravings.slice(0, 50);
   const plans = await getTriggerPlans(supabase, user.id);
+  const plansByTrigger: Record<string, string> = Object.fromEntries(
+    plans.map((p) => [p.trigger, p.plan]),
+  );
+  const effectiveness = effectivenessByTrigger(cravings);
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
@@ -65,13 +69,14 @@ export default async function CravingsPage() {
         </div>
       </section>
 
-      <LogCravingForm />
+      <LogCravingForm plansByTrigger={plansByTrigger} />
 
       {insights.total >= 4 && <InsightsPanel insights={insights} />}
 
       <TriggerPlans
         plans={plans}
         suggestedTrigger={insights.topTrigger?.name ?? null}
+        effectiveness={effectiveness}
       />
 
       <section className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800">

@@ -49,3 +49,24 @@ export function plansForCoach(plans: TriggerPlan[]): string[] {
   }
   return lines;
 }
+
+export type PlanEffectiveness = {
+  yes: number;
+  no: number;
+  unused: number;
+};
+
+// Aggregates plan_used answers from craving rows, keyed by trigger.
+export function effectivenessByTrigger(
+  rows: Array<{ trigger: string | null; plan_used: string | null }>,
+): Record<string, PlanEffectiveness> {
+  const out: Record<string, PlanEffectiveness> = {};
+  for (const r of rows) {
+    const t = r.trigger;
+    const p = r.plan_used;
+    if (!t || (p !== "yes" && p !== "no" && p !== "unused")) continue;
+    if (!out[t]) out[t] = { yes: 0, no: 0, unused: 0 };
+    out[t][p] += 1;
+  }
+  return out;
+}

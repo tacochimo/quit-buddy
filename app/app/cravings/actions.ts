@@ -18,10 +18,21 @@ export async function logCraving(formData: FormData) {
   );
   const trigger = String(formData.get("trigger") ?? "").trim() || null;
   const note = String(formData.get("note") ?? "").trim().slice(0, 280) || null;
+  const rawPlanUsed = String(formData.get("plan_used") ?? "").trim();
+  const planUsed =
+    rawPlanUsed === "yes" || rawPlanUsed === "no" || rawPlanUsed === "unused"
+      ? rawPlanUsed
+      : null;
 
   const { error } = await supabase
     .from("cravings")
-    .insert({ user_id: user.id, intensity, trigger, note });
+    .insert({
+      user_id: user.id,
+      intensity,
+      trigger,
+      note,
+      plan_used: planUsed,
+    });
   if (error) return { error: error.message };
 
   // Fire-and-forget buddy ping. Helper handles "no buddy" + threshold.

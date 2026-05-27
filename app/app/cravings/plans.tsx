@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { saveTriggerPlan, deleteTriggerPlan } from "./plan-actions";
-import type { TriggerPlan } from "@/lib/trigger-plans";
+import type { TriggerPlan, PlanEffectiveness } from "@/lib/trigger-plans";
 
 const TRIGGERS = [
   "Stress",
@@ -17,9 +17,11 @@ const TRIGGERS = [
 export function TriggerPlans({
   plans,
   suggestedTrigger,
+  effectiveness = {},
 }: {
   plans: TriggerPlan[];
   suggestedTrigger: string | null;
+  effectiveness?: Record<string, PlanEffectiveness>;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const planForSuggested = suggestedTrigger
@@ -56,6 +58,7 @@ export function TriggerPlans({
           <PlanRow
             key={p.id}
             plan={p}
+            stats={effectiveness[p.trigger]}
             editing={editing === p.id}
             onEdit={() => setEditing(p.id)}
             onCancel={() => setEditing(null)}
@@ -91,12 +94,14 @@ export function TriggerPlans({
 
 function PlanRow({
   plan,
+  stats,
   editing,
   onEdit,
   onCancel,
   onSaved,
 }: {
   plan: TriggerPlan;
+  stats?: PlanEffectiveness;
   editing: boolean;
   onEdit: () => void;
   onCancel: () => void;
@@ -138,6 +143,7 @@ function PlanRow({
         <span className="text-neutral-500">, I will: </span>
         <span>{plan.plan}</span>
       </p>
+      {stats && <PlanStats stats={stats} />}
       <div className="mt-2 flex gap-3 text-xs">
         <button
           onClick={onEdit}
@@ -155,6 +161,38 @@ function PlanRow({
       </div>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </li>
+  );
+}
+
+function PlanStats({ stats }: { stats: PlanEffectiveness }) {
+  const tried = stats.yes + stats.no;
+  if (tried + stats.unused === 0) return null;
+
+  if (tried === 0) {
+    return (
+      <p className="mt-1 text-xs text-neutral-500">
+        Logged {stats.unused} time{stats.unused === 1 ? "" : "s"} without using
+        the plan.
+      </p>
+    );
+  }
+  const pct = Math.round((stats.yes / tried) * 100);
+  const tone =
+    pct >= 70
+      ? "text-emerald-700 dark:text-emerald-400"
+      : pct >= 40
+        ? "text-amber-700 dark:text-amber-400"
+        : "text-red-600 dark:text-red-400";
+  return (
+    <p className={`mt-1 text-xs ${tone}`}>
+      Worked <strong>{stats.yes}</strong> / {tried} times ({pct}%)
+      {stats.unused > 0 && (
+        <span className="text-neutral-500">
+          {" "}
+          · {stats.unused} not used
+        </span>
+      )}
+    </p>
   );
 }
 

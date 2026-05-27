@@ -14,10 +14,17 @@ const TRIGGERS = [
   "Other",
 ];
 
-export function LogCravingForm() {
+type PlanByTrigger = Record<string, string>;
+
+export function LogCravingForm({
+  plansByTrigger = {},
+}: {
+  plansByTrigger?: PlanByTrigger;
+}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [intensity, setIntensity] = useState(3);
+  const [trigger, setTrigger] = useState<string>("");
   const formRef = useRef<HTMLFormElement>(null);
 
   function onSubmit(formData: FormData) {
@@ -29,9 +36,12 @@ export function LogCravingForm() {
       } else {
         formRef.current?.reset();
         setIntensity(3);
+        setTrigger("");
       }
     });
   }
+
+  const activePlan = trigger ? plansByTrigger[trigger] : undefined;
 
   return (
     <form
@@ -62,17 +72,38 @@ export function LogCravingForm() {
         <label className="text-sm font-medium">Trigger</label>
         <select
           name="trigger"
-          defaultValue=""
+          value={trigger}
+          onChange={(e) => setTrigger(e.target.value)}
           className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
         >
           <option value="">— pick one (optional) —</option>
           {TRIGGERS.map((t) => (
             <option key={t} value={t}>
               {t}
+              {plansByTrigger[t] ? "  ·  has a plan" : ""}
             </option>
           ))}
         </select>
       </div>
+
+      {activePlan && (
+        <div className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950/30">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+            Your plan for {trigger}
+          </p>
+          <p className="italic text-emerald-900 dark:text-emerald-200">
+            &ldquo;{activePlan}&rdquo;
+          </p>
+          <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+            Did it help?
+          </p>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <PlanRadio value="yes" label="Yes" />
+            <PlanRadio value="no" label="Tried, didn't help" />
+            <PlanRadio value="unused" label="Didn't use it" />
+          </div>
+        </div>
+      )}
 
       <textarea
         name="note"
@@ -92,5 +123,25 @@ export function LogCravingForm() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
     </form>
+  );
+}
+
+function PlanRadio({
+  value,
+  label,
+}: {
+  value: "yes" | "no" | "unused";
+  label: string;
+}) {
+  return (
+    <label className="cursor-pointer rounded-full border border-emerald-300 px-3 py-1 text-emerald-800 transition has-[:checked]:bg-emerald-200 dark:border-emerald-700 dark:text-emerald-300 dark:has-[:checked]:bg-emerald-900/50">
+      <input
+        type="radio"
+        name="plan_used"
+        value={value}
+        className="sr-only"
+      />
+      {label}
+    </label>
   );
 }
