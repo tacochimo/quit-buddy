@@ -5,6 +5,7 @@ import { SettingsForm } from "./form";
 import { NotificationsToggle } from "./notifications-toggle";
 import { NudgeTest } from "./nudge-test";
 import { AIUsageCard } from "./ai-usage-card";
+import { isAdminEmail } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,17 @@ export default async function SettingsPage() {
       <AIUsageCard />
 
       <NudgeTest />
+
+      {isAdminEmail(user.email ?? null) && (
+        <div className="text-center">
+          <Link
+            href="/app/admin/usage"
+            className="text-sm text-neutral-500 underline hover:text-neutral-700 dark:hover:text-neutral-300"
+          >
+            Admin · Usage dashboard
+          </Link>
+        </div>
+      )}
     </main>
   );
 }
