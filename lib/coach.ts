@@ -93,17 +93,23 @@ export type Usage = {
   completionTokens: number;
 };
 
-export async function generateCoachReply(args: {
+// Streams the reply chunk-by-chunk via the onText callback. Returns the full
+// reply + token usage once the stream completes (includes usage via
+// stream_options.include_usage).
+export async function generateCoachReplyStream(args: {
   context: CoachContext;
   history: ChatMessage[];
   userMessage: string;
+  onText: (chunk: string) => void;
 }): Promise<{ reply: string; usage: Usage }> {
   const openai = getClient();
 
-  const response = await openai.chat.completions.create({
+  const stream = await openai.chat.completions.create({
     model: MODEL,
     max_completion_tokens: 250,
     temperature: 0.7,
+    stream: true,
+    stream_options: { include_usage: true },
     messages: [
       { role: "system", content: buildSystemPrompt(args.context) },
       ...args.history.map((m) => ({ role: m.role, content: m.content })),
@@ -111,14 +117,25 @@ export async function generateCoachReply(args: {
     ],
   });
 
+  let reply = "";
+  let promptTokens = 0;
+  let completionTokens = 0;
+
+  for await (const chunk of stream) {
+    const delta = chunk.choices[0]?.delta?.content ?? "";
+    if (delta) {
+      reply += delta;
+      args.onText(delta);
+    }
+    if (chunk.usage) {
+      promptTokens = chunk.usage.prompt_tokens ?? 0;
+      completionTokens = chunk.usage.completion_tokens ?? 0;
+    }
+  }
+
   return {
     reply:
-      response.choices[0]?.message?.content?.trim() ??
-      "I'm here. Tell me more about what's going on.",
-    usage: {
-      model: MODEL,
-      promptTokens: response.usage?.prompt_tokens ?? 0,
-      completionTokens: response.usage?.completion_tokens ?? 0,
-    },
+      reply.trim() || "I'm here. Tell me more about what's going on.",
+    usage: { model: MODEL, promptTokens, completionTokens },
   };
 }
