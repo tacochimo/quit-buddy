@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateProfile } from "./actions";
+import { PersonaPicker } from "../_shared/persona-picker";
 
 type Defaults = {
   display_name: string;
@@ -12,6 +13,7 @@ type Defaults = {
   reasons: string;
   savings_goal_name: string;
   savings_goal_amount: number | string;
+  coach_persona: string;
 };
 
 export function SettingsForm({ defaults }: { defaults: Defaults }) {
@@ -102,6 +104,14 @@ export function SettingsForm({ defaults }: { defaults: Defaults }) {
           className={inputCls}
         />
       </Field>
+
+      <div id="persona">
+        <PersonaPicker
+          defaultValue={defaults.coach_persona}
+          label="AI companion"
+          hint="Switch anytime. New replies use the new voice; old messages stay as-is."
+        />
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2">

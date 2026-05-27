@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CoachChat } from "./chat";
 import { getCoachUsage } from "./actions";
+import { getPersona } from "@/lib/personas";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,13 @@ export default async function CoachPage() {
   const usage = await getCoachUsage();
   const remaining = Math.max(0, usage.limit - usage.used);
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("coach_persona")
+    .eq("id", user.id)
+    .single();
+  const persona = getPersona(profile?.coach_persona);
+
   return (
     <main className="mx-auto flex h-[100dvh] max-w-xl flex-col px-4 pb-4 pt-4">
       <header className="flex items-center justify-between pb-3">
@@ -35,7 +43,10 @@ export default async function CoachPage() {
             ← Home
           </Link>
           <h1 className="mt-1 text-xl font-bold">
-            Coach
+            <span aria-hidden className="mr-1">
+              {persona.emoji}
+            </span>
+            {persona.name}
             {remaining <= 5 && (
               <span
                 className={`ml-2 text-xs font-normal ${
@@ -48,6 +59,12 @@ export default async function CoachPage() {
               </span>
             )}
           </h1>
+          <Link
+            href="/app/settings#persona"
+            className="text-xs text-neutral-500 underline hover:text-neutral-700"
+          >
+            change companion
+          </Link>
         </div>
         {messages && messages.length > 0 && <ClearButton />}
       </header>

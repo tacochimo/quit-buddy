@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { saveOnboarding } from "./actions";
+import { PersonaPicker } from "../_shared/persona-picker";
 
 export function OnboardingForm({ defaultQuitDate }: { defaultQuitDate: string }) {
   const [pending, startTransition] = useTransition();
@@ -76,6 +77,10 @@ export function OnboardingForm({ defaultQuitDate }: { defaultQuitDate: string })
           className={inputCls}
         />
       </Field>
+
+      <PersonaPicker
+        hint="Who do you want by your side? You can change this anytime in Settings."
+      />
 
       <button
         type="submit"

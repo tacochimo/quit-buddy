@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { PERSONAS, DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
 
 export async function updateProfile(formData: FormData) {
   const supabase = await createClient();
@@ -22,6 +23,9 @@ export async function updateProfile(formData: FormData) {
     .slice(0, 80);
   const goalAmountRaw = String(formData.get("savings_goal_amount") ?? "").trim();
   const goalAmount = goalAmountRaw === "" ? null : Number(goalAmountRaw);
+  const personaInput = String(formData.get("coach_persona") ?? "friend");
+  const persona: PersonaId =
+    personaInput in PERSONAS ? (personaInput as PersonaId) : DEFAULT_PERSONA;
 
   if (displayName.length < 1 || displayName.length > 50) {
     return { error: "Display name must be 1–50 characters." };
@@ -50,6 +54,7 @@ export async function updateProfile(formData: FormData) {
       reasons: reasons || null,
       savings_goal_name: goalName || null,
       savings_goal_amount: goalAmount && goalAmount > 0 ? goalAmount : null,
+      coach_persona: persona,
     })
     .eq("id", user.id);
   if (updateErr) return { error: updateErr.message };

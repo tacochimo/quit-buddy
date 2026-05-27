@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { type Persona } from "./personas";
 
 // Provider isolation lives here. To swap to Anthropic later, replace this
 // module — keep the same exported signature.
@@ -24,11 +25,12 @@ export type CoachContext = {
   reasons: string | null;
   cigsPerDay: number | null;
   moneySaved: number;
+  persona: Persona;
 };
 
 export function buildSystemPrompt(ctx: CoachContext): string {
   const lines: string[] = [
-    "You are Quit Buddy, an empathetic quit-smoking coach.",
+    ctx.persona.intro,
     `The user is named ${ctx.displayName}.`,
   ];
 
@@ -65,6 +67,10 @@ export function buildSystemPrompt(ctx: CoachContext): string {
     );
   }
 
+  // Persona-specific tone — colors voice without overriding safety rules below.
+  lines.push("", "VOICE:");
+  for (const t of ctx.persona.tone) lines.push(`- ${t}`);
+
   lines.push(
     "",
     "RULES:",
@@ -74,7 +80,6 @@ export function buildSystemPrompt(ctx: CoachContext): string {
     "- If they mention craving NOW, mention the breathing exercise at /app/breathe and the SOS button.",
     "- If they slipped, frame compassionately and help them restart.",
     "- Don't lecture. Don't pile on tips. Pick the most useful one.",
-    "- Speak like a trusted friend, not a doctor.",
     "",
     "TOPIC SCOPE — STRICT:",
     "You ONLY discuss quitting smoking, vaping, nicotine cravings, recovery, related health topics, mental state during a quit, accountability, or this user's own quit journey.",

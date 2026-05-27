@@ -19,7 +19,7 @@ export default async function SettingsPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, savings_goal_name, savings_goal_amount",
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, savings_goal_name, savings_goal_amount, coach_persona",
     )
     .eq("id", user.id)
     .single();
@@ -49,6 +49,7 @@ export default async function SettingsPage() {
           reasons: profile.reasons ?? "",
           savings_goal_name: profile.savings_goal_name ?? "",
           savings_goal_amount: profile.savings_goal_amount ?? "",
+          coach_persona: profile.coach_persona ?? "friend",
         }}
       />
 

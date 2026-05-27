@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { type CoachContext, generateCoachReplyStream } from "@/lib/coach";
 import { computeSavings, computeStreak } from "@/lib/streak";
+import { getPersona } from "@/lib/personas";
 import {
   getMonthlyBudgetUsd,
   getMonthlyCostUsd,
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     supabase
       .from("profiles")
       .select(
-        "display_name, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons",
+        "display_name, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, coach_persona",
       )
       .eq("id", user.id)
       .single(),
@@ -119,6 +120,7 @@ export async function POST(request: NextRequest) {
     reasons: profile.reasons,
     cigsPerDay: profile.baseline_cigs_per_day,
     moneySaved: savings.moneySaved,
+    persona: getPersona(profile.coach_persona),
   };
 
   const history = (historyRes.data ?? []).map((m) => ({

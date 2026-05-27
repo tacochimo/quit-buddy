@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { PERSONAS, DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
 
 export async function saveOnboarding(formData: FormData) {
   const supabase = await createClient();
@@ -15,12 +16,16 @@ export async function saveOnboarding(formData: FormData) {
   const costPerPack = Number(formData.get("cost_per_pack") ?? 0);
   const cigsPerPack = Number(formData.get("cigs_per_pack") ?? 20);
   const reasons = String(formData.get("reasons") ?? "").trim().slice(0, 500);
+  const personaInput = String(formData.get("coach_persona") ?? "friend");
 
   if (!quitDateStr || baselineCigs <= 0 || costPerPack <= 0) {
     return { error: "Please fill in all fields with valid numbers." };
   }
 
   const quitDate = new Date(quitDateStr);
+
+  const persona: PersonaId =
+    personaInput in PERSONAS ? (personaInput as PersonaId) : DEFAULT_PERSONA;
 
   const { error: profileError } = await supabase
     .from("profiles")
@@ -30,6 +35,7 @@ export async function saveOnboarding(formData: FormData) {
       cost_per_pack: costPerPack,
       cigs_per_pack: cigsPerPack,
       reasons: reasons || null,
+      coach_persona: persona,
     })
     .eq("id", user.id);
 

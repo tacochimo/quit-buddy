@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { StreakState } from "./streak";
+import type { Persona } from "./personas";
 
 const MILESTONE_DAYS = [1, 7, 30, 90, 180, 365];
 
@@ -69,6 +70,7 @@ export async function generateNudgeMessage(args: {
   displayName: string;
   streakDays: number;
   reasons: string | null;
+  persona: Persona;
 }): Promise<{ message: string; usage: NudgeUsage }> {
   const ctx: string[] = [
     `User: ${args.displayName}`,
@@ -89,16 +91,20 @@ export async function generateNudgeMessage(args: {
       break;
   }
 
-  const prompt = `You are Quit Buddy, an empathetic quit-smoking coach. You're reaching out PROACTIVELY (the user did not message you first).
+  const toneHints = args.persona.tone.map((t) => `- ${t}`).join("\n");
+
+  const prompt = `${args.persona.intro} You're reaching out PROACTIVELY (the user did not message you first).
 
 ${ctx.join("\n")}
 
 Situation: ${situation}
 
+VOICE:
+${toneHints}
+
 Write a SHORT (1-2 sentences) opener. Rules:
-- Don't introduce yourself or say "this is your coach" — they know.
-- Sound like a friend texting, not a corporate notification.
-- No hype or exclamation overload.
+- Don't introduce yourself or say who you are — they know.
+- No hype or exclamation overload (cheerleaders may use one).
 - If celebrating a milestone, name the number once.
 - If idle, ask one specific question rather than a generic "how are you".`;
 

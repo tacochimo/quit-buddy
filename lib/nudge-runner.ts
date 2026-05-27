@@ -3,6 +3,7 @@ import { computeStreak } from "./streak";
 import { decideNudge, generateNudgeMessage } from "./nudges";
 import { sendPushToUser } from "./push";
 import { recordUsage } from "./ai-usage";
+import { getPersona } from "./personas";
 
 export async function runNudges(
   admin: ReturnType<typeof createAdminClient>,
@@ -53,7 +54,7 @@ async function nudgeOneUser(
   const [profileRes, latestRes, lastNudgeRes, lastChatRes] = await Promise.all([
     admin
       .from("profiles")
-      .select("display_name, reasons")
+      .select("display_name, reasons, coach_persona")
       .eq("id", userId)
       .single(),
     admin
@@ -103,6 +104,7 @@ async function nudgeOneUser(
     displayName: profile.display_name,
     streakDays: streak.kind === "quit" ? streak.days : 0,
     reasons: profile.reasons,
+    persona: getPersona(profile.coach_persona),
   });
 
   await admin.from("chat_messages").insert({
