@@ -13,6 +13,7 @@ import { SignOutButton } from "./sign-out-button";
 import { RelapseButton, RestartButton } from "./relapse-button";
 import { awardMilestoneStars } from "./actions";
 import { ActiveSOSBanner, SOSButton } from "./sos-button";
+import { getWithdrawalStage } from "@/lib/withdrawal";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +175,9 @@ export default async function HomePage() {
               &ldquo;{profile.reasons}&rdquo;
             </p>
           )}
+
+          <WithdrawalCard days={days} />
+
 
           <section className="grid grid-cols-2 gap-3">
             <Stat
@@ -409,6 +413,26 @@ function SavingsGoalBar({
           : `${pct.toFixed(0)}% there`}
       </p>
     </section>
+  );
+}
+
+function WithdrawalCard({ days }: { days: number }) {
+  const { current, next, daysUntilNext } = getWithdrawalStage(days);
+  return (
+    <Link
+      href="/app/withdrawal"
+      className="flex flex-col gap-1 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 transition hover:border-emerald-400 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:hover:border-emerald-700"
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+        Where you are
+      </p>
+      <p className="text-sm font-semibold">{current.headline}</p>
+      <p className="text-xs text-neutral-600 dark:text-neutral-400">
+        {next && daysUntilNext != null && daysUntilNext > 0
+          ? `${daysUntilNext} ${daysUntilNext === 1 ? "day" : "days"} until: ${next.headline.replace(/\.$/, "")}`
+          : current.reassurance}
+      </p>
+    </Link>
   );
 }
 

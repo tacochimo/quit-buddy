@@ -90,7 +90,13 @@ export default async function HealthPage() {
       </ol>
 
       <p className="text-center text-xs text-neutral-500">
-        Source: CDC / Surgeon General quit-smoking timeline.
+        Source: CDC / Surgeon General quit-smoking timeline.{" "}
+        <Link
+          href="/app/withdrawal"
+          className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+        >
+          See the withdrawal timeline →
+        </Link>
       </p>
     </main>
   );
