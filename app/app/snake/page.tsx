@@ -37,6 +37,13 @@ export default function SnakePage() {
         >
           Slice
         </Link>
+        {" · "}
+        <Link
+          href="/app/flap"
+          className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+        >
+          Flight
+        </Link>
       </p>
     </main>
   );

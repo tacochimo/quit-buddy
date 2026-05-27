@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { DinoRunner } from "./runner";
+import { FlapBird } from "./bird";
 
-export default function GamePage() {
+export default function FlapPage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
       <header>
@@ -11,19 +11,27 @@ export default function GamePage() {
         >
           ← Home
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Quick game</h1>
+        <h1 className="mt-2 text-2xl font-bold">Smoke-free flight</h1>
         <p className="mt-2 text-sm text-neutral-500">
-          A craving usually peaks in under 5 minutes. Play through it.
+          Tap to flap your lungs. Dodge the cigarettes. Every pipe cleared is
+          one more smoke-free day.
         </p>
       </header>
 
-      <DinoRunner />
+      <FlapBird />
 
       <p className="text-center text-xs text-neutral-500">
-        Tap to jump. Don&apos;t hit anything. That&apos;s the whole game.
+        Tap the canvas or press space.
       </p>
 
       <p className="text-center text-xs text-neutral-500">
+        <Link
+          href="/app/game"
+          className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+        >
+          Runner
+        </Link>
+        {" · "}
         <Link
           href="/app/snake"
           className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
@@ -36,13 +44,6 @@ export default function GamePage() {
           className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
         >
           Slice
-        </Link>
-        {" · "}
-        <Link
-          href="/app/flap"
-          className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
-        >
-          Flight
         </Link>
       </p>
     </main>
