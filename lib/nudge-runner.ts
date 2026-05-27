@@ -118,8 +118,9 @@ async function nudgeOneUser(
   const risk = computeRelapseRisk({
     streakDays: streak.kind === "quit" ? streak.days : 0,
     cravings,
+    tz: profile.timezone ?? null,
   });
-  const insights = computeInsights(cravings);
+  const insights = computeInsights(cravings, { tz: profile.timezone ?? null });
   const localNow = getLocalNow(profile.timezone ?? null);
 
   const decision = decideNudge({

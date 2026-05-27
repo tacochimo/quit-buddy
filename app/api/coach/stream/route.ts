@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       supabase
         .from("profiles")
         .select(
-          "display_name, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, coach_persona",
+          "display_name, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, coach_persona, timezone",
         )
         .eq("id", user.id)
         .single(),
@@ -131,7 +131,9 @@ export async function POST(request: NextRequest) {
   });
 
   const cravingInsights = insightsForCoach(
-    computeInsights(cravingsRes.data ?? []),
+    computeInsights(cravingsRes.data ?? [], {
+      tz: profile.timezone ?? null,
+    }),
   );
 
   const context: CoachContext = {

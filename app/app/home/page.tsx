@@ -125,7 +125,9 @@ export default async function HomePage() {
       .limit(200),
     getTriggerPlans(supabase, user.id),
   ]);
-  const peakInsights = computeInsights(cravingRows ?? []);
+  const peakInsights = computeInsights(cravingRows ?? [], {
+    tz: profile.timezone ?? null,
+  });
   const inPeak = isInPeakWindow(peakInsights.peakWindow);
   const peakTopTrigger = peakInsights.topTrigger?.name ?? null;
   const peakPlan =

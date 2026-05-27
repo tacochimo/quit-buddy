@@ -74,7 +74,7 @@ export async function buildReport(userId: string): Promise<ReportData | null> {
     supabase
       .from("profiles")
       .select(
-        "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons",
+        "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, timezone",
       )
       .eq("id", userId)
       .single(),
@@ -281,7 +281,7 @@ export async function buildReport(userId: string): Promise<ReportData | null> {
       total: cravings.length,
       last30dCount: last30d.length,
       avgIntensity,
-      insights: computeInsights(cravings),
+      insights: computeInsights(cravings, { tz: profile.timezone ?? null }),
     },
     meds: { active, past, sideEffects },
     milestones: [...new Set(milestoneDays)].sort((a, b) => a - b),

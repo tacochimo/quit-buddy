@@ -29,6 +29,7 @@ const DAY_MS = 24 * 3600 * 1000;
 export function computeRelapseRisk(args: {
   streakDays: number;
   cravings: Craving[];
+  tz?: string | null;
   now?: Date;
 }): RelapseRisk {
   const now = args.now ?? new Date();
@@ -67,7 +68,10 @@ export function computeRelapseRisk(args: {
     reasons.push("weekend_evening");
   }
 
-  const peak = computeInsights(args.cravings, now).peakWindow;
+  const peak = computeInsights(args.cravings, {
+    now,
+    tz: args.tz ?? null,
+  }).peakWindow;
 
   let level: RiskLevel = "low";
   if (score >= 0.6) level = "high";

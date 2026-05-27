@@ -36,8 +36,24 @@ export type Insights = {
 
 const HOUR_WINDOW = 3;
 
-function hourOf(iso: string): number {
-  // Local hour — patterns are anchored to the user's day, not UTC.
+function hourOf(iso: string, tz?: string | null): number {
+  // Patterns are anchored to the user's local day, not UTC. When a tz is
+  // supplied (server-side callers), use Intl to extract the user's local
+  // hour. Without tz, fall back to JS runtime locale (correct in browsers,
+  // UTC on Vercel — acceptable only for legacy callers).
+  if (tz) {
+    try {
+      const fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        hour12: false,
+        hour: "2-digit",
+      });
+      const h = Number(fmt.format(new Date(iso)));
+      return Number.isNaN(h) ? new Date(iso).getHours() : h % 24;
+    } catch {
+      return new Date(iso).getHours();
+    }
+  }
   return new Date(iso).getHours();
 }
 
@@ -48,25 +64,30 @@ function within(iso: string, sinceMs: number, untilMs: number): boolean {
 
 export function computeInsights(
   cravings: Craving[],
-  now: Date = new Date(),
+  opts: { now?: Date; tz?: string | null } = {},
 ): Insights {
   const total = cravings.length;
+  const now = opts.now ?? new Date();
+  const tz = opts.tz ?? null;
 
   return {
     total,
-    peakWindow: findPeakWindow(cravings),
+    peakWindow: findPeakWindow(cravings, tz),
     topTrigger: findTopTrigger(cravings),
     intensityTrend: findIntensityTrend(cravings, now),
     frequencyTrend: findFrequencyTrend(cravings, now),
   };
 }
 
-function findPeakWindow(cravings: Craving[]): HourWindow | null {
+function findPeakWindow(
+  cravings: Craving[],
+  tz: string | null,
+): HourWindow | null {
   if (cravings.length < 6) return null;
 
   // 24 buckets, then slide a 3-hour window to find the densest start.
   const byHour = new Array<number>(24).fill(0);
-  for (const c of cravings) byHour[hourOf(c.created_at)]++;
+  for (const c of cravings) byHour[hourOf(c.created_at, tz)]++;
 
   let bestStart = 0;
   let bestCount = 0;

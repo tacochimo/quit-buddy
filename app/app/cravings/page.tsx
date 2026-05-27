@@ -18,15 +18,24 @@ export default async function CravingsPage() {
 
   // Pull a wider window for pattern detection; the recent list still shows
   // the most recent 50 below.
-  const { data: cravingsData } = await supabase
-    .from("cravings")
-    .select("id, intensity, trigger, note, plan_used, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(200);
-  const cravings = cravingsData ?? [];
+  const [cravingsRes, profileRes] = await Promise.all([
+    supabase
+      .from("cravings")
+      .select("id, intensity, trigger, note, plan_used, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase
+      .from("profiles")
+      .select("timezone")
+      .eq("id", user.id)
+      .single(),
+  ]);
+  const cravings = cravingsRes.data ?? [];
 
-  const insights = computeInsights(cravings);
+  const insights = computeInsights(cravings, {
+    tz: profileRes.data?.timezone ?? null,
+  });
   const recent = cravings.slice(0, 50);
   const plans = await getTriggerPlans(supabase, user.id);
   const plansByTrigger: Record<string, string> = Object.fromEntries(
