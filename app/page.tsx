@@ -90,6 +90,24 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* SCREENSHOTS */}
+      <section className="bg-neutral-50 py-20 dark:bg-neutral-900/60">
+        <div className="mx-auto max-w-5xl px-6">
+          <h2 className="text-center text-2xl font-bold sm:text-3xl">
+            See it in action
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-neutral-600 dark:text-neutral-400">
+            Mobile-first PWA. Install to your home screen and it feels like a
+            native app.
+          </p>
+          <div className="mt-12 grid gap-8 sm:grid-cols-3">
+            <PhoneShot src="/screenshots/home.svg" caption="Home — your streak, savings, and quick tools" />
+            <PhoneShot src="/screenshots/channel.svg" caption="Channel — leaderboard, cheers, live activity" />
+            <PhoneShot src="/screenshots/coach.svg" caption="Coach — AI chat that knows your context" />
+          </div>
+        </div>
+      </section>
+
       {/* HEALTH HOOK */}
       <section className="bg-emerald-50 py-16 dark:bg-emerald-950/30">
         <div className="mx-auto max-w-2xl px-6 text-center">
@@ -243,6 +261,27 @@ function Step({
         </p>
       </div>
     </li>
+  );
+}
+
+function PhoneShot({ src, caption }: { src: string; caption: string }) {
+  return (
+    <figure className="flex flex-col items-center gap-3">
+      <div className="overflow-hidden rounded-[2rem] border-[6px] border-neutral-900 bg-neutral-900 shadow-xl dark:border-neutral-700">
+        {/* SVGs render directly via img with default browser rendering */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={caption}
+          className="block w-full max-w-[240px]"
+          width={240}
+          height={480}
+        />
+      </div>
+      <figcaption className="text-center text-xs text-neutral-600 dark:text-neutral-400">
+        {caption}
+      </figcaption>
+    </figure>
   );
 }
 

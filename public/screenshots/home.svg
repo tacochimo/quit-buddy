@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 640" width="320" height="640">
+  <defs>
+    <linearGradient id="streakGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+    <style>
+      .body { fill: #ffffff; }
+      .text-dark { fill: #0a0a0a; font-family: -apple-system, system-ui, sans-serif; }
+      .text-muted { fill: #737373; font-family: -apple-system, system-ui, sans-serif; }
+      .card-bg { fill: #ffffff; stroke: #e5e5e5; stroke-width: 1; }
+      .stat-num { font-weight: 700; font-family: -apple-system, system-ui, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- phone background -->
+  <rect width="320" height="640" rx="32" class="body"/>
+
+  <!-- status bar -->
+  <text x="20" y="22" class="text-dark" font-size="11" font-weight="600">9:41</text>
+  <circle cx="295" cy="18" r="3" fill="#0a0a0a"/>
+  <circle cx="285" cy="18" r="3" fill="#0a0a0a"/>
+  <circle cx="275" cy="18" r="3" fill="#0a0a0a"/>
+
+  <!-- header -->
+  <text x="20" y="58" class="text-dark" font-size="20" font-weight="700">Quit Buddy</text>
+  <text x="20" y="74" class="text-muted" font-size="11">Hi, tacochimo</text>
+  <text x="260" y="62" class="text-muted" font-size="11">Settings</text>
+
+  <!-- big streak card -->
+  <rect x="16" y="92" width="288" height="120" rx="24" fill="url(#streakGrad)"/>
+  <text x="32" y="116" fill="white" opacity="0.85" font-size="11" font-family="-apple-system, system-ui, sans-serif">Smoke-free for</text>
+  <text x="32" y="170" fill="white" class="stat-num" font-size="56">23</text>
+  <text x="118" y="170" fill="white" opacity="0.85" font-size="18" font-family="-apple-system, system-ui, sans-serif">days</text>
+  <text x="32" y="196" fill="white" opacity="0.8" font-size="10" font-family="-apple-system, system-ui, sans-serif">7 days to your next star</text>
+
+  <!-- reasons quote -->
+  <rect x="16" y="224" width="288" height="44" rx="12" fill="#f5f5f5"/>
+  <text x="32" y="252" class="text-dark" font-size="11" font-style="italic">&#8220;For my kids. So I can run with them.&#8221;</text>
+
+  <!-- stats row -->
+  <rect x="16" y="280" width="138" height="60" rx="16" class="card-bg"/>
+  <text x="28" y="298" class="text-muted" font-size="9" font-weight="600">MONEY SAVED</text>
+  <text x="28" y="324" class="text-dark stat-num" font-size="20">$87.40</text>
+
+  <rect x="166" y="280" width="138" height="60" rx="16" class="card-bg"/>
+  <text x="178" y="298" class="text-muted" font-size="9" font-weight="600">CIGS AVOIDED</text>
+  <text x="178" y="324" class="text-dark stat-num" font-size="20">460</text>
+
+  <!-- savings goal bar -->
+  <rect x="16" y="352" width="288" height="56" rx="16" class="card-bg"/>
+  <text x="28" y="370" class="text-muted" font-size="9" font-weight="600">GOAL: VACATION</text>
+  <text x="240" y="372" class="text-dark" font-size="11" font-weight="600">$87 / $500</text>
+  <rect x="28" y="380" width="264" height="6" rx="3" fill="#e5e5e5"/>
+  <rect x="28" y="380" width="46" height="6" rx="3" fill="#10b981"/>
+  <text x="28" y="402" class="text-muted" font-size="10">17% there</text>
+
+  <!-- tools grid -->
+  <rect x="16" y="420" width="138" height="56" rx="16" class="card-bg"/>
+  <text x="28" y="442" font-size="18">&#129309;</text>
+  <text x="56" y="442" class="text-dark" font-size="12" font-weight="600">Coach</text>
+  <text x="28" y="462" class="text-muted" font-size="10">Talk it out</text>
+
+  <rect x="166" y="420" width="138" height="56" rx="16" class="card-bg"/>
+  <text x="178" y="442" font-size="18">&#127787;</text>
+  <text x="206" y="442" class="text-dark" font-size="12" font-weight="600">Breathe</text>
+  <text x="178" y="462" class="text-muted" font-size="10">Calm a craving</text>
+
+  <rect x="16" y="488" width="138" height="56" rx="16" class="card-bg"/>
+  <text x="28" y="510" font-size="18">&#128200;</text>
+  <text x="56" y="510" class="text-dark" font-size="12" font-weight="600">Health</text>
+  <text x="28" y="530" class="text-muted" font-size="10">You&#8217;re healing</text>
+
+  <rect x="166" y="488" width="138" height="56" rx="16" class="card-bg"/>
+  <text x="178" y="510" font-size="18">&#128211;</text>
+  <text x="206" y="510" class="text-dark" font-size="12" font-weight="600">Cravings</text>
+  <text x="178" y="530" class="text-muted" font-size="10">Log + patterns</text>
+
+  <!-- channels list snippet -->
+  <rect x="16" y="556" width="288" height="68" rx="16" class="card-bg"/>
+  <text x="28" y="574" class="text-muted" font-size="9" font-weight="600">YOUR CHANNELS</text>
+  <text x="28" y="596" class="text-dark" font-size="12" font-weight="600">APG Crew</text>
+  <text x="290" y="596" class="text-muted" font-size="14" text-anchor="end">&#8594;</text>
+  <text x="28" y="614" class="text-dark" font-size="12" font-weight="600">Office Champions</text>
+  <text x="290" y="614" class="text-muted" font-size="14" text-anchor="end">&#8594;</text>
+</svg>
