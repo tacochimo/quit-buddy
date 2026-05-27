@@ -24,5 +24,31 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
     ],
+    shortcuts: [
+      {
+        name: "Log a craving",
+        short_name: "Craving",
+        description: "Log what you're feeling right now",
+        url: "/app/cravings",
+      },
+      {
+        name: "Talk to coach",
+        short_name: "Coach",
+        description: "Chat with your AI companion",
+        url: "/app/coach",
+      },
+      {
+        name: "Log a dose",
+        short_name: "Meds",
+        description: "Track NRT or medication",
+        url: "/app/meds",
+      },
+      {
+        name: "I slipped",
+        short_name: "Slip",
+        description: "Capture a slip without resetting your streak",
+        url: "/app/slip",
+      },
+    ],
   };
 }

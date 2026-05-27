@@ -11,6 +11,7 @@ import {
 } from "@/lib/ai-usage";
 import { getRecentSlipContext } from "@/lib/slip-context";
 import { getTriggerPlans } from "@/lib/trigger-plans";
+import { getRecentMood } from "@/lib/mood";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
     cravingsRes,
     recentSlip,
     triggerPlans,
+    recentMood,
   ] = await Promise.all([
       supabase
         .from("profiles")
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
         .limit(200),
       getRecentSlipContext(supabase, user.id),
       getTriggerPlans(supabase, user.id),
+      getRecentMood(supabase, user.id),
     ]);
 
   const profile = profileRes.data;
@@ -147,6 +150,7 @@ export async function POST(request: NextRequest) {
     cravingInsights,
     recentSlip,
     triggerPlans,
+    recentMood,
   };
 
   const history = (historyRes.data ?? []).map((m) => ({

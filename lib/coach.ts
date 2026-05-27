@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { type Persona } from "./personas";
 import { type RecentSlip, slipContextLines } from "./slip-context";
 import { type TriggerPlan, plansForCoach } from "./trigger-plans";
+import { type Mood, moodLabel } from "./mood";
 
 // Provider isolation lives here. To swap to Anthropic later, replace this
 // module — keep the same exported signature.
@@ -35,6 +36,8 @@ export type CoachContext = {
   recentSlip: RecentSlip | null;
   // User's own if-then plans for known triggers.
   triggerPlans: TriggerPlan[];
+  // Most recent daily mood check-in, if any.
+  recentMood: { mood: Mood; daysAgo: number } | null;
 };
 
 export function buildSystemPrompt(ctx: CoachContext): string {
@@ -90,6 +93,19 @@ export function buildSystemPrompt(ctx: CoachContext): string {
   const planLines = plansForCoach(ctx.triggerPlans);
   if (planLines.length > 0) {
     lines.push("", ...planLines);
+  }
+
+  if (ctx.recentMood) {
+    const when =
+      ctx.recentMood.daysAgo === 0
+        ? "today"
+        : ctx.recentMood.daysAgo === 1
+          ? "yesterday"
+          : `${ctx.recentMood.daysAgo} days ago`;
+    lines.push(
+      "",
+      `MOOD CHECK-IN (${when}): they said they felt "${moodLabel(ctx.recentMood.mood)}". Reference this naturally if relevant, don't quote it back.`,
+    );
   }
 
   // Persona voice — concrete do/don'ts that lock in tone.

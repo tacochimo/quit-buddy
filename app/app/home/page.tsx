@@ -17,6 +17,11 @@ import { getWithdrawalStage } from "@/lib/withdrawal";
 import { computeInsights } from "@/lib/craving-insights";
 import { getTriggerPlans, isInPeakWindow } from "@/lib/trigger-plans";
 import { TimezoneCapture } from "./timezone-capture";
+import { getCompletedSteps } from "@/lib/prep";
+import { getLocalNow } from "@/lib/timezone";
+import { PrepCard } from "./prep-card";
+import { getTodaysMood } from "@/lib/mood";
+import { MoodCard } from "./mood-card";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +120,26 @@ export default async function HomePage() {
     .eq("to_user_id", user.id)
     .gte("created_at", sevenDaysAgo);
 
+  // Quit-day prep: days until the user's chosen quit date in their tz.
+  const tz = profile.timezone ?? null;
+  const localToday = getLocalNow(tz)?.date ?? new Date().toISOString().slice(0, 10);
+  const quitDateStr = profile.quit_date
+    ? new Date(profile.quit_date).toISOString().slice(0, 10)
+    : null;
+  const daysUntilQuit =
+    quitDateStr && quitDateStr > localToday
+      ? Math.round(
+          (new Date(quitDateStr).getTime() -
+            new Date(localToday).getTime()) /
+            (24 * 60 * 60 * 1000),
+        )
+      : null;
+  const completedPrepIds = daysUntilQuit !== null
+    ? [...(await getCompletedSteps(supabase, user.id))]
+    : [];
+
+  const todaysMood = await getTodaysMood(supabase, user.id, localToday);
+
   // Active if-then plan to surface if we're currently inside the peak window.
   const [{ data: cravingRows }, plans] = await Promise.all([
     supabase
@@ -175,6 +200,13 @@ export default async function HomePage() {
         </div>
       </header>
 
+      {daysUntilQuit !== null && (
+        <PrepCard
+          daysUntil={daysUntilQuit}
+          completedIds={completedPrepIds}
+        />
+      )}
+
       {streak.kind === "quit" ? (
         <>
           <section className="rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-8 text-white">
@@ -199,6 +231,8 @@ export default async function HomePage() {
               &ldquo;{profile.reasons}&rdquo;
             </p>
           )}
+
+          <MoodCard today={todaysMood} />
 
           <WithdrawalCard days={days} />
 
