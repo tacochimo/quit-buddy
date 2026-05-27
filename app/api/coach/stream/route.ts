@@ -10,6 +10,7 @@ import {
   recordUsage,
 } from "@/lib/ai-usage";
 import { getRecentSlipContext } from "@/lib/slip-context";
+import { getTriggerPlans } from "@/lib/trigger-plans";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -73,9 +74,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Load context (profile + latest streak + history + craving patterns + recent slip).
-  const [profileRes, latestRes, historyRes, cravingsRes, recentSlip] =
-    await Promise.all([
+  // Load context (profile + latest streak + history + craving patterns + recent slip + plans).
+  const [
+    profileRes,
+    latestRes,
+    historyRes,
+    cravingsRes,
+    recentSlip,
+    triggerPlans,
+  ] = await Promise.all([
       supabase
         .from("profiles")
         .select(
@@ -103,6 +110,7 @@ export async function POST(request: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(200),
       getRecentSlipContext(supabase, user.id),
+      getTriggerPlans(supabase, user.id),
     ]);
 
   const profile = profileRes.data;
@@ -136,6 +144,7 @@ export async function POST(request: NextRequest) {
     persona: getPersona(profile.coach_persona),
     cravingInsights,
     recentSlip,
+    triggerPlans,
   };
 
   const history = (historyRes.data ?? []).map((m) => ({

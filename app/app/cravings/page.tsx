@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/activity";
 import { LogCravingForm } from "./log-form";
 import { computeInsights, fmtHour } from "@/lib/craving-insights";
+import { getTriggerPlans } from "@/lib/trigger-plans";
+import { TriggerPlans } from "./plans";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,7 @@ export default async function CravingsPage() {
 
   const insights = computeInsights(cravings);
   const recent = cravings.slice(0, 50);
+  const plans = await getTriggerPlans(supabase, user.id);
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
@@ -65,6 +68,11 @@ export default async function CravingsPage() {
       <LogCravingForm />
 
       {insights.total >= 4 && <InsightsPanel insights={insights} />}
+
+      <TriggerPlans
+        plans={plans}
+        suggestedTrigger={insights.topTrigger?.name ?? null}
+      />
 
       <section className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800">
         <h2 className="border-b border-neutral-200 bg-neutral-50 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900">

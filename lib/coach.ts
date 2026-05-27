@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { type Persona } from "./personas";
 import { type RecentSlip, slipContextLines } from "./slip-context";
+import { type TriggerPlan, plansForCoach } from "./trigger-plans";
 
 // Provider isolation lives here. To swap to Anthropic later, replace this
 // module — keep the same exported signature.
@@ -32,6 +33,8 @@ export type CoachContext = {
   cravingInsights: string | null;
   // Most recent slip or relapse within the last 24h, if any.
   recentSlip: RecentSlip | null;
+  // User's own if-then plans for known triggers.
+  triggerPlans: TriggerPlan[];
 };
 
 export function buildSystemPrompt(ctx: CoachContext): string {
@@ -82,6 +85,11 @@ export function buildSystemPrompt(ctx: CoachContext): string {
 
   if (ctx.recentSlip) {
     lines.push("", ...slipContextLines(ctx.recentSlip));
+  }
+
+  const planLines = plansForCoach(ctx.triggerPlans);
+  if (planLines.length > 0) {
+    lines.push("", ...planLines);
   }
 
   // Persona voice — concrete do/don'ts that lock in tone.

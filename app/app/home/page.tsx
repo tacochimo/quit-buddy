@@ -14,6 +14,8 @@ import { RelapseButton, RestartButton } from "./relapse-button";
 import { awardMilestoneStars } from "./actions";
 import { ActiveSOSBanner, SOSButton } from "./sos-button";
 import { getWithdrawalStage } from "@/lib/withdrawal";
+import { computeInsights } from "@/lib/craving-insights";
+import { getTriggerPlans, isInPeakWindow } from "@/lib/trigger-plans";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +114,24 @@ export default async function HomePage() {
     .eq("to_user_id", user.id)
     .gte("created_at", sevenDaysAgo);
 
+  // Active if-then plan to surface if we're currently inside the peak window.
+  const [{ data: cravingRows }, plans] = await Promise.all([
+    supabase
+      .from("cravings")
+      .select("intensity, trigger, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    getTriggerPlans(supabase, user.id),
+  ]);
+  const peakInsights = computeInsights(cravingRows ?? []);
+  const inPeak = isInPeakWindow(peakInsights.peakWindow);
+  const peakTopTrigger = peakInsights.topTrigger?.name ?? null;
+  const peakPlan =
+    inPeak && peakTopTrigger
+      ? plans.find((p) => p.trigger === peakTopTrigger) ?? null
+      : null;
+
   let peerMilestonesThisWeek = 0;
   if (channelIds.length > 0) {
     const { data: peerIds } = await supabase
@@ -177,6 +197,20 @@ export default async function HomePage() {
           )}
 
           <WithdrawalCard days={days} />
+
+          {peakPlan && (
+            <section className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/30">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                In your peak craving window
+              </p>
+              <p className="mt-2 text-sm">
+                <span className="text-neutral-500">When </span>
+                <span className="font-semibold">{peakPlan.trigger}</span>
+                <span className="text-neutral-500">, you said you would: </span>
+                <span className="font-medium">{peakPlan.plan}</span>
+              </p>
+            </section>
+          )}
 
 
           <section className="grid grid-cols-2 gap-3">
