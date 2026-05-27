@@ -11,10 +11,23 @@ const STARTING_LIVES = 3;
 const ROUND_MS = 60_000;
 const SPAWN_MIN_MS = 600;
 const SPAWN_MAX_MS = 1400;
+const HALF_LIFE_MS = 900;
+const PARTICLE_LIFE_MS = 700;
+
 const FRUIT_GLYPHS = ["🍎", "🍊", "🍋", "🍇", "🍉", "🍓"];
 const BOMB_GLYPH = "💣";
 const BOMB_CHANCE = 0.1;
 const COMBO_BONUS = [0, 0, 2, 5, 10, 15]; // index = swipe count
+
+const JUICE_COLOR: Record<string, string> = {
+  "🍎": "#dc2626",
+  "🍊": "#f97316",
+  "🍋": "#facc15",
+  "🍇": "#7c3aed",
+  "🍉": "#ec4899",
+  "🍓": "#e11d48",
+};
+const BOMB_COLOR = "#525252";
 
 const STORAGE_KEY = "quitbuddy.slice.high";
 
@@ -28,9 +41,30 @@ type Fruit = {
   vy: number;
   rot: number;
   vrot: number;
-  sliced: boolean;
-  sliceAge: number;
-  alive: boolean;
+};
+
+type Half = {
+  glyph: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vrot: number;
+  side: "upper" | "lower";
+  sliceAngleLocal: number; // slice axis in piece-local frame
+  ageMs: number;
+};
+
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  color: string;
+  ageMs: number;
+  lifeMs: number;
 };
 
 type TrailPt = { x: number; y: number; t: number };
@@ -39,6 +73,8 @@ type State = {
   running: boolean;
   over: boolean;
   fruits: Fruit[];
+  halves: Half[];
+  particles: Particle[];
   trail: TrailPt[];
   score: number;
   lives: number;
@@ -56,6 +92,8 @@ function initialState(): State {
     running: false,
     over: false,
     fruits: [],
+    halves: [],
+    particles: [],
     trail: [],
     score: 0,
     lives: STARTING_LIVES,
@@ -87,15 +125,73 @@ function spawnWave(s: State) {
       vy: -(12 + Math.random() * 4),
       rot: 0,
       vrot: (Math.random() - 0.5) * 0.25,
-      sliced: false,
-      sliceAge: 0,
-      alive: true,
     });
   }
   s.spawnInMs = SPAWN_MIN_MS + Math.random() * (SPAWN_MAX_MS - SPAWN_MIN_MS);
 }
 
-// Distance from point C to segment AB ≤ r ?
+function spawnSliceFx(
+  s: State,
+  f: Fruit,
+  sliceAngleWorld: number,
+  sliceVx: number,
+  sliceVy: number,
+) {
+  // Two halves: split perpendicular to the slice direction.
+  const perp = sliceAngleWorld + Math.PI / 2;
+  const kick = 3;
+  const sliceAngleLocal = sliceAngleWorld - f.rot;
+  for (const side of ["upper", "lower"] as const) {
+    const sign = side === "upper" ? -1 : 1;
+    s.halves.push({
+      glyph: f.glyph,
+      x: f.x,
+      y: f.y,
+      vx: f.vx + Math.cos(perp) * kick * sign + sliceVx * 0.15,
+      vy: f.vy + Math.sin(perp) * kick * sign + sliceVy * 0.15 - 1,
+      rot: f.rot,
+      vrot: f.vrot + (Math.random() - 0.5) * 0.3,
+      side,
+      sliceAngleLocal,
+      ageMs: 0,
+    });
+  }
+
+  // Juice particles.
+  const color = JUICE_COLOR[f.glyph] ?? "#10b981";
+  for (let i = 0; i < 9; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 4;
+    s.particles.push({
+      x: f.x,
+      y: f.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1,
+      r: 2 + Math.random() * 3,
+      color,
+      ageMs: 0,
+      lifeMs: PARTICLE_LIFE_MS,
+    });
+  }
+}
+
+function spawnBombBoom(s: State, f: Fruit) {
+  for (let i = 0; i < 16; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 3 + Math.random() * 5;
+    s.particles.push({
+      x: f.x,
+      y: f.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      r: 2 + Math.random() * 4,
+      color: Math.random() < 0.3 ? "#f59e0b" : BOMB_COLOR,
+      ageMs: 0,
+      lifeMs: PARTICLE_LIFE_MS,
+    });
+  }
+}
+
 function segHitsCircle(
   ax: number,
   ay: number,
@@ -157,7 +253,7 @@ export function SliceBoard() {
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // Trail (oldest first, fading)
+    // Trail
     if (s.trail.length >= 2) {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -177,20 +273,49 @@ export function SliceBoard() {
       }
     }
 
-    // Fruits
+    // Particles (under fruits)
+    for (const p of s.particles) {
+      const alpha = Math.max(0, 1 - p.ageMs / p.lifeMs);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Fruits (whole)
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = "32px ui-sans-serif, system-ui";
     for (const f of s.fruits) {
-      if (!f.alive) continue;
       ctx.save();
       ctx.translate(f.x, f.y);
       ctx.rotate(f.rot);
-      if (f.sliced) {
-        const alpha = Math.max(0, 1 - f.sliceAge / 500);
-        ctx.globalAlpha = alpha;
-      }
       ctx.fillText(f.glyph, 0, 0);
+      ctx.restore();
+    }
+
+    // Halves (clipped)
+    for (const h of s.halves) {
+      const alpha = Math.max(0, 1 - h.ageMs / HALF_LIFE_MS);
+      ctx.save();
+      ctx.translate(h.x, h.y);
+      ctx.rotate(h.rot);
+      // Rotate into slice-aligned local frame, clip to half-plane.
+      ctx.rotate(h.sliceAngleLocal);
+      ctx.beginPath();
+      const R = 40;
+      if (h.side === "upper") {
+        ctx.rect(-R, -R, 2 * R, R);
+      } else {
+        ctx.rect(-R, 0, 2 * R, R);
+      }
+      ctx.clip();
+      // Rotate back so glyph is upright in piece-local frame.
+      ctx.rotate(-h.sliceAngleLocal);
+      ctx.globalAlpha = alpha;
+      ctx.fillText(h.glyph, 0, 0);
       ctx.restore();
     }
     ctx.globalAlpha = 1;
@@ -205,19 +330,20 @@ export function SliceBoard() {
       ctx.fillStyle = dim;
       ctx.fillText(`HI ${String(bestRef.current).padStart(4, "0")}`, 8, 18);
     }
-    // Lives
     ctx.fillStyle = fg;
     ctx.textAlign = "center";
     ctx.font = "16px ui-sans-serif, system-ui";
-    ctx.fillText("❤".repeat(s.lives) + "·".repeat(STARTING_LIVES - s.lives), WIDTH / 2, 18);
-    // Timer
+    ctx.fillText(
+      "❤".repeat(s.lives) + "·".repeat(STARTING_LIVES - s.lives),
+      WIDTH / 2,
+      18,
+    );
     ctx.font = "12px ui-monospace, monospace";
     ctx.textAlign = "right";
     const sec = Math.max(0, Math.ceil(s.msLeft / 1000));
     ctx.fillStyle = sec <= 10 ? "#dc2626" : dim;
     ctx.fillText(`${sec}s`, WIDTH - 8, 34);
 
-    // Combo banner
     if (s.comboBanner) {
       const alpha = Math.max(0, 1 - s.comboBanner.ageMs / 700);
       ctx.globalAlpha = alpha;
@@ -269,47 +395,65 @@ export function SliceBoard() {
       s.lastT = now;
       const scale = dt / (1000 / 60);
 
-      // Timer
       s.msLeft -= dt;
       if (s.msLeft <= 0) {
         endGame();
         return;
       }
 
-      // Spawn
       s.spawnInMs -= dt;
       if (s.spawnInMs <= 0) spawnWave(s);
 
-      // Fruit physics
+      // Fruits
       for (const f of s.fruits) {
-        if (!f.alive) continue;
         f.x += f.vx * scale;
         f.y += f.vy * scale;
         f.vy += GRAVITY * scale;
         f.rot += f.vrot * scale;
-        if (f.sliced) {
-          f.sliceAge += dt;
-          if (f.sliceAge > 500) f.alive = false;
-        }
-        // Off-screen: miss if it was an un-sliced fruit
-        if (f.y > HEIGHT + 60 || f.x < -60 || f.x > WIDTH + 60) {
-          if (!f.sliced && f.type === "fruit" && f.alive) {
+      }
+      const fruitsBefore = s.fruits.length;
+      const survived: Fruit[] = [];
+      for (const f of s.fruits) {
+        const offBottom = f.y > HEIGHT + 60;
+        const offSide = f.x < -60 || f.x > WIDTH + 60;
+        if (offBottom || offSide) {
+          if (f.type === "fruit") {
             s.lives -= 1;
             if (s.lives <= 0) {
-              f.alive = false;
               endGame();
               return;
             }
           }
-          f.alive = false;
+          continue;
         }
+        survived.push(f);
       }
-      s.fruits = s.fruits.filter((f) => f.alive);
+      if (survived.length !== fruitsBefore) s.fruits = survived;
+
+      // Halves
+      for (const h of s.halves) {
+        h.x += h.vx * scale;
+        h.y += h.vy * scale;
+        h.vy += GRAVITY * scale;
+        h.rot += h.vrot * scale;
+        h.ageMs += dt;
+      }
+      s.halves = s.halves.filter(
+        (h) => h.ageMs < HALF_LIFE_MS && h.y < HEIGHT + 80,
+      );
+
+      // Particles
+      for (const p of s.particles) {
+        p.x += p.vx * scale;
+        p.y += p.vy * scale;
+        p.vy += GRAVITY * scale * 0.6;
+        p.ageMs += dt;
+      }
+      s.particles = s.particles.filter((p) => p.ageMs < p.lifeMs);
 
       // Trail expiry
       s.trail = s.trail.filter((p) => now - p.t < TRAIL_MS);
 
-      // Combo banner age
       if (s.comboBanner) {
         s.comboBanner.ageMs += dt;
         if (s.comboBanner.ageMs > 700) s.comboBanner = null;
@@ -328,14 +472,11 @@ export function SliceBoard() {
     stateRef.current.rafId = requestAnimationFrame(loop);
   }, [loop]);
 
-  // Initial draw + cleanup
   useEffect(() => {
     draw();
     return () => cancelAnimationFrame(stateRef.current.rafId);
   }, [draw]);
 
-  // Pointer handling: track a continuous swipe; on each move, test the new
-  // segment against every live fruit/bomb.
   const swipeActiveRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -372,28 +513,33 @@ export function SliceBoard() {
     s.trail.push({ x: p.x, y: p.y, t: performance.now() });
     if (!prev) return;
 
-    // Hit detection: segment prev → p vs each live, un-sliced fruit
+    const dx = p.x - prev.x;
+    const dy = p.y - prev.y;
+    const sliceAngle = Math.atan2(dy, dx);
+
     let slicedThisMove = 0;
     let lastSliceX = 0;
     let lastSliceY = 0;
+    const survivors: Fruit[] = [];
     for (const f of s.fruits) {
-      if (!f.alive || f.sliced) continue;
-      if (segHitsCircle(prev.x, prev.y, p.x, p.y, f.x, f.y, FRUIT_R)) {
-        if (f.type === "bomb") {
-          endGame();
-          return;
-        }
-        f.sliced = true;
-        f.vy -= 4; // small upward kick on slice
-        f.vx += (Math.random() - 0.5) * 4;
-        f.vrot += (Math.random() - 0.5) * 0.4;
-        s.score += 1;
-        s.comboCount += 1;
-        slicedThisMove += 1;
-        lastSliceX = f.x;
-        lastSliceY = f.y;
+      if (!segHitsCircle(prev.x, prev.y, p.x, p.y, f.x, f.y, FRUIT_R)) {
+        survivors.push(f);
+        continue;
       }
+      if (f.type === "bomb") {
+        spawnBombBoom(s, f);
+        endGame();
+        return;
+      }
+      spawnSliceFx(s, f, sliceAngle, dx, dy);
+      s.score += 1;
+      s.comboCount += 1;
+      slicedThisMove += 1;
+      lastSliceX = f.x;
+      lastSliceY = f.y;
     }
+    if (slicedThisMove > 0) s.fruits = survivors;
+
     if (slicedThisMove > 0 && s.comboCount >= 2) {
       const bonus =
         COMBO_BONUS[Math.min(s.comboCount, COMBO_BONUS.length - 1)];
