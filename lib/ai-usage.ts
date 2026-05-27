@@ -1,4 +1,37 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "./supabase/admin";
+
+// Per-user monthly budget. Default $0.50/month is generous on gpt-4o-mini
+// (~5000 coach turns). Set COACH_MONTHLY_BUDGET_USD=0 to disable enforcement.
+export function getMonthlyBudgetUsd(): number {
+  const raw = process.env.COACH_MONTHLY_BUDGET_USD;
+  if (raw === undefined) return 0.5;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : 0.5;
+}
+
+function startOfUtcMonthIso(): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+export async function getMonthlyCostUsd(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<number> {
+  const { data } = await supabase
+    .from("ai_usage")
+    .select("cost_usd")
+    .eq("user_id", userId)
+    .gte("created_at", startOfUtcMonthIso());
+  return (data ?? []).reduce(
+    (sum, r: { cost_usd: number | string | null }) =>
+      sum + Number(r.cost_usd ?? 0),
+    0,
+  );
+}
 
 // Prices per 1M tokens in USD. Update when OpenAI changes them.
 // Falls back to zero cost for unknown models so usage still gets logged.

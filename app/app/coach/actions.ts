@@ -8,7 +8,11 @@ import {
   generateCoachReply,
 } from "@/lib/coach";
 import { computeSavings, computeStreak } from "@/lib/streak";
-import { recordUsage } from "@/lib/ai-usage";
+import {
+  getMonthlyBudgetUsd,
+  getMonthlyCostUsd,
+  recordUsage,
+} from "@/lib/ai-usage";
 
 const DAILY_LIMIT = Number(process.env.COACH_DAILY_LIMIT ?? 30);
 
@@ -57,6 +61,18 @@ export async function sendCoachMessage(message: string) {
     return {
       error: `You've used your ${DAILY_LIMIT} coach messages for today. Resets at UTC midnight.`,
     };
+  }
+
+  // Monthly $ budget — separate cap so spending can be bounded even if a user
+  // stays under the message cap (e.g., very long replies).
+  const budget = getMonthlyBudgetUsd();
+  if (budget > 0) {
+    const spent = await getMonthlyCostUsd(supabase, user.id);
+    if (spent >= budget) {
+      return {
+        error: `You've reached your $${budget.toFixed(2)} monthly AI budget (used $${spent.toFixed(4)}). Resets on the 1st UTC.`,
+      };
+    }
   }
 
   // Build context from profile + latest streak event.
