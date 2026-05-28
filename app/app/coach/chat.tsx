@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Companion } from "@/lib/companions";
+import type { Tier } from "@/lib/subscription";
 import { CoachCompanion } from "./companion";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };
@@ -20,11 +21,13 @@ export function CoachChat({
   disabled,
   companion,
   milestoneDay,
+  tier,
 }: {
   initialMessages: Msg[];
   disabled: boolean;
   companion: Companion | null;
   milestoneDay: number | null;
+  tier: Tier;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -218,6 +221,7 @@ export function CoachChat({
           companion={companion}
           typing={pending !== null && pending.assistant.length > 0}
           milestoneDay={milestoneDay}
+          tier={tier}
         />
       )}
 

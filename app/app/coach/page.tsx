@@ -106,6 +106,7 @@ export default async function CoachPage() {
         disabled={!configured}
         companion={companion}
         milestoneDay={milestoneDay}
+        tier={usage.tier}
       />
     </main>
   );
