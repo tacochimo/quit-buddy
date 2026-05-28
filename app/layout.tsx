@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     title: "Quit Buddy",
     statusBarStyle: "default",
   },
+  verification: {
+    google: "tTS2gFzwyKPk1BXg3rbn7Tkh0ys6dXJgA2EbfoXADI8",
+  },
 };
 
 export const viewport: Viewport = {
