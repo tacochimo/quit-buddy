@@ -3,7 +3,8 @@ import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeSavings, computeStreak, earnedMilestones } from "@/lib/streak";
 
-export const runtime = "edge";
+// nodejs runtime — Edge has subtle constraints that can blank-fail Satori.
+export const runtime = "nodejs";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
