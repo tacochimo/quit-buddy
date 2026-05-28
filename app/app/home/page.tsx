@@ -241,6 +241,8 @@ export default async function HomePage() {
             </p>
           )}
 
+          <SectionLabel>Today</SectionLabel>
+
           <MoodCard today={todaysMood} />
 
           <WithdrawalCard days={days} />
@@ -260,6 +262,8 @@ export default async function HomePage() {
           )}
 
 
+          <SectionLabel>Progress</SectionLabel>
+
           <section className="grid grid-cols-2 gap-3">
             <Stat
               label="Money saved"
@@ -278,6 +282,8 @@ export default async function HomePage() {
               target={Number(savingsGoalAmount)}
             />
           )}
+
+          <SectionLabel>Tools</SectionLabel>
 
           <section className="grid grid-cols-2 gap-3">
             <Tool
@@ -388,6 +394,8 @@ export default async function HomePage() {
               </section>
             )}
 
+          <SectionLabel>If you need it</SectionLabel>
+
           {activeSos ? (
             <ActiveSOSBanner
               note={activeSos.note}
@@ -470,6 +478,14 @@ function ChannelsSection({
         </Link>
       </div>
     </section>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="-mb-3 mt-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+      {children}
+    </p>
   );
 }
 
