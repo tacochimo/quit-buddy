@@ -140,6 +140,15 @@ export default async function HomePage() {
 
   const todaysMood = await getTodaysMood(supabase, user.id, localToday);
 
+  // Daily spin: has today been spun?
+  const { data: todaySpinRow } = await supabase
+    .from("prize_spins")
+    .select("outcome")
+    .eq("user_id", user.id)
+    .eq("spin_date", localToday)
+    .maybeSingle();
+  const spinAvailable = !todaySpinRow;
+
   // Active if-then plan to surface if we're currently inside the peak window.
   const [{ data: cravingRows }, plans] = await Promise.all([
     supabase
@@ -312,6 +321,12 @@ export default async function HomePage() {
               icon="💊"
               label="Meds"
               hint="Track NRT + doses"
+            />
+            <Tool
+              href="/app/spin"
+              icon="🎁"
+              label={spinAvailable ? "Spin (new!)" : "Spin"}
+              hint={spinAvailable ? "Daily prize ready" : "Already spun today"}
             />
           </section>
 

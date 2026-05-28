@@ -41,11 +41,15 @@ export function CoachCompanion({
   typing,
   milestoneDay,
   tier,
+  tricksUnlocked = false,
+  sparkle = false,
 }: {
   companion: Companion;
   typing: boolean;
   milestoneDay: number | null;
   tier: Tier;
+  tricksUnlocked?: boolean;
+  sparkle?: boolean;
 }) {
   const [mode, setMode] = useState<Mode>("idle");
   const [arrived, setArrived] = useState(false);
@@ -89,7 +93,7 @@ export function CoachCompanion({
     if (now - lastTapRef.current < TAP_COOLDOWN_MS) return;
     lastTapRef.current = now;
 
-    const pool = tier === "plus" ? PLUS_TRICKS : FREE_TRICKS;
+    const pool = tier === "plus" || tricksUnlocked ? PLUS_TRICKS : FREE_TRICKS;
     const trick = pool[trickIdxRef.current % pool.length];
     trickIdxRef.current += 1;
 
@@ -105,7 +109,8 @@ export function CoachCompanion({
     }, trick.durationMs);
 
     // Free users: after a few taps, show the upsell hint once per page mount.
-    if (tier === "free") {
+    // Skip when today's spin already unlocked tricks.
+    if (tier === "free" && !tricksUnlocked) {
       const nextCount = tapCount + 1;
       setTapCount(nextCount);
       if (!hintShown && nextCount >= FREE_TAP_HINT_AT) {
@@ -137,6 +142,13 @@ export function CoachCompanion({
   return (
     <div className="relative flex items-end justify-end px-2 pb-1 pt-2">
       <div className="relative">
+        {sparkle && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -m-2 rounded-full bg-amber-300/40 blur-md animate-companion-idle"
+            style={{ animationDuration: "2.4s" }}
+          />
+        )}
         {mode === "celebrate" && <Sparkles />}
         {trickEmote && (
           <span

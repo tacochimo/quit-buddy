@@ -6,6 +6,8 @@ import { getCoachUsage } from "./actions";
 import { getPersona } from "@/lib/personas";
 import { getCompanion } from "@/lib/companions";
 import { MILESTONES, computeStreak } from "@/lib/streak";
+import { getActiveRewards } from "@/lib/spin";
+import { getLocalNow } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +31,17 @@ export default async function CoachPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("coach_persona, companion")
+    .select("coach_persona, companion, timezone")
     .eq("id", user.id)
     .single();
   const persona = getPersona(profile?.coach_persona);
-  const companion = getCompanion(profile?.companion);
+  const today =
+    getLocalNow(profile?.timezone ?? null)?.date ??
+    new Date().toISOString().slice(0, 10);
+  const rewards = await getActiveRewards(supabase, user.id, today);
+  // If today's spin swapped the companion, use that instead.
+  const effectiveCompanionId = rewards.swappedCompanion ?? profile?.companion ?? null;
+  const companion = getCompanion(effectiveCompanionId);
 
   // Today's milestone, if any — drives the companion celebration animation.
   const { data: latestEvent } = await supabase
@@ -107,6 +115,8 @@ export default async function CoachPage() {
         companion={companion}
         milestoneDay={milestoneDay}
         tier={usage.tier}
+        tricksUnlocked={rewards.tricksUnlocked}
+        sparkle={rewards.sparkle}
       />
     </main>
   );

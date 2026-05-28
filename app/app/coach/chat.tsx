@@ -22,12 +22,16 @@ export function CoachChat({
   companion,
   milestoneDay,
   tier,
+  tricksUnlocked,
+  sparkle,
 }: {
   initialMessages: Msg[];
   disabled: boolean;
   companion: Companion | null;
   milestoneDay: number | null;
   tier: Tier;
+  tricksUnlocked: boolean;
+  sparkle: boolean;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -222,6 +226,8 @@ export function CoachChat({
           typing={pending !== null && pending.assistant.length > 0}
           milestoneDay={milestoneDay}
           tier={tier}
+          tricksUnlocked={tricksUnlocked}
+          sparkle={sparkle}
         />
       )}
 

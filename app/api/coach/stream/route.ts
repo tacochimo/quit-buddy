@@ -13,6 +13,8 @@ import { getRecentSlipContext } from "@/lib/slip-context";
 import { getTriggerPlans } from "@/lib/trigger-plans";
 import { getRecentMood } from "@/lib/mood";
 import { coachDailyLimit, getTier } from "@/lib/subscription";
+import { getActiveRewards } from "@/lib/spin";
+import { getLocalNow } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -57,7 +59,17 @@ export async function POST(request: NextRequest) {
   }
 
   const tier = await getTier(supabase, user.id);
-  const dailyLimit = coachDailyLimit(tier);
+  // Look up the user's tz so daily-spin bonuses align to their local day.
+  const { data: tzRow } = await supabase
+    .from("profiles")
+    .select("timezone")
+    .eq("id", user.id)
+    .maybeSingle();
+  const today =
+    getLocalNow(tzRow?.timezone ?? null)?.date ??
+    new Date().toISOString().slice(0, 10);
+  const rewards = await getActiveRewards(supabase, user.id, today);
+  const dailyLimit = coachDailyLimit(tier) + rewards.bonusMessages;
 
   // Atomic daily-quota reservation. Returns the new used count, or null if
   // already at limit. Race-free under concurrent requests.
