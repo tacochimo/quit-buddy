@@ -331,9 +331,19 @@ export default async function HomePage() {
           </section>
 
           <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-              Stars earned
-            </h2>
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+                Stars earned
+              </h2>
+              {days > 0 && (
+                <Link
+                  href="/app/share"
+                  className="text-xs font-medium text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
+                >
+                  Share streak →
+                </Link>
+              )}
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {earnedMilestones(days).length === 0 ? (
                 <p className="text-sm text-neutral-500">
