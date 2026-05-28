@@ -63,6 +63,20 @@ export default async function SettingsPage() {
       <AIUsageCard />
 
       <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
+        <p className="font-semibold">Invite a friend</p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Both of you get a 🤝 referral star and 5 bonus coach messages a day
+          for a week.
+        </p>
+        <Link
+          href="/app/invite"
+          className="mt-4 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+        >
+          Get your invite link
+        </Link>
+      </section>
+
+      <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
         <p className="font-semibold">Plan &amp; billing</p>
         <p className="mt-1 text-sm text-neutral-500">
           See your current plan and upgrade for a higher daily coach limit.

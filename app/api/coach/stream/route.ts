@@ -16,6 +16,7 @@ import { coachDailyLimit, getTier } from "@/lib/subscription";
 import { getActiveRewards } from "@/lib/spin";
 import { getLocalNow } from "@/lib/timezone";
 import { track } from "@/lib/analytics";
+import { REFERRAL_BONUS_MSGS_PER_DAY, bonusMessagesActive } from "@/lib/referral";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -60,17 +61,24 @@ export async function POST(request: NextRequest) {
   }
 
   const tier = await getTier(supabase, user.id);
-  // Look up the user's tz so daily-spin bonuses align to their local day.
-  const { data: tzRow } = await supabase
+  // Look up tz (for spin-bonus day alignment) + bonus_messages_until
+  // (referral reward window) in one round-trip.
+  const { data: profileRow } = await supabase
     .from("profiles")
-    .select("timezone")
+    .select("timezone, bonus_messages_until")
     .eq("id", user.id)
     .maybeSingle();
   const today =
-    getLocalNow(tzRow?.timezone ?? null)?.date ??
+    getLocalNow(profileRow?.timezone ?? null)?.date ??
     new Date().toISOString().slice(0, 10);
   const rewards = await getActiveRewards(supabase, user.id, today);
-  const dailyLimit = coachDailyLimit(tier) + rewards.bonusMessages;
+  const referralBonus = bonusMessagesActive(
+    profileRow?.bonus_messages_until ?? null,
+  )
+    ? REFERRAL_BONUS_MSGS_PER_DAY
+    : 0;
+  const dailyLimit =
+    coachDailyLimit(tier) + rewards.bonusMessages + referralBonus;
 
   // Atomic daily-quota reservation. Returns the new used count, or null if
   // already at limit. Race-free under concurrent requests.

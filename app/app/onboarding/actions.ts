@@ -1,8 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PERSONAS, DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
+import { applyQualifiedReferral } from "@/lib/referral";
 
 export async function saveOnboarding(formData: FormData) {
   const supabase = await createClient();
@@ -49,6 +51,19 @@ export async function saveOnboarding(formData: FormData) {
   });
 
   if (eventError) return { error: eventError.message };
+
+  // If they landed via /?ref=CODE, attribute + grant rewards now that
+  // onboarding is complete. Best-effort: never block the redirect.
+  try {
+    const cookieStore = await cookies();
+    const ref = cookieStore.get("qb_ref")?.value;
+    if (ref) {
+      await applyQualifiedReferral(user.id, ref);
+      cookieStore.delete("qb_ref");
+    }
+  } catch (e) {
+    console.error("[onboarding] referral attribution failed:", e);
+  }
 
   redirect("/app/home");
 }

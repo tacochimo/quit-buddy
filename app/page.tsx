@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { RefCapture } from "./ref-capture";
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -11,6 +12,7 @@ export default async function LandingPage() {
 
   return (
     <main className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <RefCapture />
       {/* HERO */}
       <section className="mx-auto max-w-3xl px-6 py-20 sm:py-28 text-center">
         <p className="mb-3 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">

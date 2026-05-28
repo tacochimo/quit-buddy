@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { coachDailyLimit, getTier, type Tier } from "@/lib/subscription";
+import { REFERRAL_BONUS_MSGS_PER_DAY, bonusMessagesActive } from "@/lib/referral";
 
 function utcToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -25,7 +26,7 @@ export async function getCoachUsage(): Promise<{
     return { used: 0, limit: coachDailyLimit("free"), tier: "free" };
   }
 
-  const [tier, usageRes] = await Promise.all([
+  const [tier, usageRes, profileRes] = await Promise.all([
     getTier(supabase, user.id),
     supabase
       .from("coach_quota_daily")
@@ -33,11 +34,22 @@ export async function getCoachUsage(): Promise<{
       .eq("user_id", user.id)
       .eq("day", utcToday())
       .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("bonus_messages_until")
+      .eq("id", user.id)
+      .maybeSingle(),
   ]);
+
+  const referralBonus = bonusMessagesActive(
+    profileRes.data?.bonus_messages_until ?? null,
+  )
+    ? REFERRAL_BONUS_MSGS_PER_DAY
+    : 0;
 
   return {
     used: usageRes.data?.used ?? 0,
-    limit: coachDailyLimit(tier),
+    limit: coachDailyLimit(tier) + referralBonus,
     tier,
   };
 }
