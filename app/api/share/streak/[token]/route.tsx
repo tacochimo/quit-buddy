@@ -90,7 +90,7 @@ export async function GET(
               marginTop: 8,
             }}
           >
-            {days === 1 ? "day" : "days"} smoke-free
+            {`${days === 1 ? "day" : "days"} smoke-free`}
           </div>
         </div>
 
