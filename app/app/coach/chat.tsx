@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };
@@ -26,6 +27,7 @@ export function CoachChat({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -67,6 +69,7 @@ export function CoachChat({
     if (!trimmed || pending || disabled) return;
 
     setError(null);
+    setErrorCode(null);
     setInput("");
     setPending({ user: trimmed, assistant: "" });
 
@@ -82,8 +85,15 @@ export function CoachChat({
       });
 
       if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error ?? `Request failed (${response.status})`);
+        const body = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          code?: string;
+        };
+        const err = new Error(
+          body.error ?? `Request failed (${response.status})`,
+        ) as Error & { code?: string };
+        err.code = body.code;
+        throw err;
       }
       if (!response.body) throw new Error("No response body");
 
@@ -116,8 +126,9 @@ export function CoachChat({
           setPending(null);
         });
       } else {
-        const msg = (e as Error).message ?? String(e);
-        setError(msg);
+        const errObj = e as Error & { code?: string };
+        setError(errObj.message ?? String(e));
+        setErrorCode(errObj.code ?? null);
         setInput(trimmed);
         setPending(null);
       }
@@ -166,7 +177,21 @@ export function CoachChat({
         )}
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && errorCode === "free_limit_reached" ? (
+        <div className="mt-2 flex flex-col gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-sm dark:border-emerald-700 dark:bg-emerald-950/30">
+          <p className="font-medium text-emerald-900 dark:text-emerald-100">
+            {error}
+          </p>
+          <Link
+            href="/app/billing"
+            className="inline-block self-start rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Upgrade to Plus
+          </Link>
+        </div>
+      ) : (
+        error && <p className="mt-2 text-sm text-red-600">{error}</p>
+      )}
 
       {visible.length === 0 && !disabled && (
         <div className="mt-3 flex flex-wrap gap-2">

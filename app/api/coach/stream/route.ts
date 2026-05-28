@@ -12,11 +12,11 @@ import {
 import { getRecentSlipContext } from "@/lib/slip-context";
 import { getTriggerPlans } from "@/lib/trigger-plans";
 import { getRecentMood } from "@/lib/mood";
+import { coachDailyLimit, getTier } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const DAILY_LIMIT = Number(process.env.COACH_DAILY_LIMIT ?? 30);
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -56,11 +56,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const tier = await getTier(supabase, user.id);
+  const dailyLimit = coachDailyLimit(tier);
+
   // Atomic daily-quota reservation. Returns the new used count, or null if
   // already at limit. Race-free under concurrent requests.
   const { data: quotaUsed, error: quotaErr } = await supabase.rpc(
     "consume_coach_quota",
-    { p_limit: DAILY_LIMIT },
+    { p_limit: dailyLimit },
   );
   if (quotaErr) {
     console.error("[coach/stream] consume_coach_quota:", quotaErr);
@@ -69,7 +72,11 @@ export async function POST(request: NextRequest) {
   if (quotaUsed === null) {
     return NextResponse.json(
       {
-        error: `You've used your ${DAILY_LIMIT} coach messages for today. Resets at UTC midnight.`,
+        error:
+          tier === "free"
+            ? `You've used your ${dailyLimit} free coach messages for today. Upgrade to Plus for ${coachDailyLimit("plus")} a day.`
+            : `You've used your ${dailyLimit} coach messages for today. Resets at UTC midnight.`,
+        code: tier === "free" ? "free_limit_reached" : "limit_reached",
       },
       { status: 429 },
     );

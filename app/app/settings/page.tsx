@@ -60,6 +60,19 @@ export default async function SettingsPage() {
       <AIUsageCard />
 
       <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
+        <p className="font-semibold">Plan &amp; billing</p>
+        <p className="mt-1 text-sm text-neutral-500">
+          See your current plan and upgrade for a higher daily coach limit.
+        </p>
+        <Link
+          href="/app/billing"
+          className="mt-4 inline-block rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+        >
+          Open billing
+        </Link>
+      </section>
+
+      <section className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800">
         <p className="font-semibold">Export for your doctor</p>
         <p className="mt-1 text-sm text-neutral-500">
           One-page PDF with your quit history, savings, craving patterns, and
