@@ -67,7 +67,7 @@ export async function GET(
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, opacity: 0.9 }}>
           <span style={{ fontSize: 28, fontWeight: 600 }}>
-            {firstName} on Quit Buddy
+            {`${firstName} on Quit Buddy`}
           </span>
         </div>
 
