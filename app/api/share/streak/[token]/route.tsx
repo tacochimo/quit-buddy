@@ -74,16 +74,18 @@ export async function GET(
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div
             style={{
+              display: "flex",
               fontSize: 240,
               fontWeight: 700,
               lineHeight: 1,
               letterSpacing: "-0.04em",
             }}
           >
-            {days}
+            {String(days)}
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: 56,
               fontWeight: 600,
               opacity: 0.95,
@@ -101,11 +103,11 @@ export async function GET(
               label="Cigs avoided"
               value={savings.cigsAvoided.toLocaleString("en-US")}
             />
-            {latestMilestone && (
+            {latestMilestone ? (
               <Stat label="Milestone" value={`${latestMilestone}d star`} />
-            )}
+            ) : null}
           </div>
-          <div style={{ fontSize: 22, opacity: 0.7, alignSelf: "flex-end" }}>
+          <div style={{ display: "flex", fontSize: 22, opacity: 0.7, alignSelf: "flex-end" }}>
             quitbuddy.app
           </div>
         </div>
