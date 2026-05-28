@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { Companion } from "@/lib/companions";
+import { CoachCompanion } from "./companion";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };
 
@@ -16,9 +18,13 @@ const QUICK_PROMPTS = [
 export function CoachChat({
   initialMessages,
   disabled,
+  companion,
+  milestoneDay,
 }: {
   initialMessages: Msg[];
   disabled: boolean;
+  companion: Companion | null;
+  milestoneDay: number | null;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -205,6 +211,14 @@ export function CoachChat({
             </button>
           ))}
         </div>
+      )}
+
+      {companion && (
+        <CoachCompanion
+          companion={companion}
+          typing={pending !== null && pending.assistant.length > 0}
+          milestoneDay={milestoneDay}
+        />
       )}
 
       <form

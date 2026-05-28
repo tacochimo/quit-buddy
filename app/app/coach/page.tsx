@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CoachChat } from "./chat";
 import { getCoachUsage } from "./actions";
 import { getPersona } from "@/lib/personas";
+import { getCompanion } from "@/lib/companions";
+import { MILESTONES, computeStreak } from "@/lib/streak";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +29,27 @@ export default async function CoachPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("coach_persona")
+    .select("coach_persona, companion")
     .eq("id", user.id)
     .single();
   const persona = getPersona(profile?.coach_persona);
+  const companion = getCompanion(profile?.companion);
+
+  // Today's milestone, if any — drives the companion celebration animation.
+  const { data: latestEvent } = await supabase
+    .from("streak_events")
+    .select("type, occurred_at")
+    .eq("user_id", user.id)
+    .order("occurred_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const streak = computeStreak(
+    latestEvent as { type: "quit" | "relapse"; occurred_at: string } | null,
+  );
+  const streakDays = streak.kind === "quit" ? streak.days : 0;
+  const milestoneDay = (MILESTONES as readonly number[]).includes(streakDays)
+    ? streakDays
+    : null;
 
   return (
     <main className="mx-auto flex h-[100dvh] max-w-xl flex-col px-4 pb-4 pt-4">
@@ -85,6 +104,8 @@ export default async function CoachPage() {
           })) ?? []
         }
         disabled={!configured}
+        companion={companion}
+        milestoneDay={milestoneDay}
       />
     </main>
   );

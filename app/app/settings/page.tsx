@@ -5,6 +5,7 @@ import { SettingsForm } from "./form";
 import { NotificationsToggle } from "./notifications-toggle";
 import { NudgeTest } from "./nudge-test";
 import { AIUsageCard } from "./ai-usage-card";
+import { CompanionPicker } from "./companion-picker";
 import { isAdminEmail } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function SettingsPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, savings_goal_name, savings_goal_amount, coach_persona",
+      "display_name, quit_date, baseline_cigs_per_day, cost_per_pack, cigs_per_pack, reasons, savings_goal_name, savings_goal_amount, coach_persona, companion",
     )
     .eq("id", user.id)
     .single();
@@ -56,6 +57,8 @@ export default async function SettingsPage() {
       <NotificationsToggle
         vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
+
+      <CompanionPicker current={profile.companion ?? null} />
 
       <AIUsageCard />
 
