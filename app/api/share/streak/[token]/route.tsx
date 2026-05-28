@@ -62,11 +62,9 @@ export async function GET(
           padding: "72px",
           background: "linear-gradient(135deg, #10b981, #047857)",
           color: "white",
-          fontFamily: "system-ui, sans-serif",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, opacity: 0.9 }}>
-          <span style={{ fontSize: 40 }}>🚭</span>
           <span style={{ fontSize: 28, fontWeight: 600 }}>
             {firstName} on Quit Buddy
           </span>
@@ -76,7 +74,7 @@ export async function GET(
           <div
             style={{
               fontSize: 240,
-              fontWeight: 800,
+              fontWeight: 700,
               lineHeight: 1,
               letterSpacing: "-0.04em",
             }}
@@ -103,7 +101,7 @@ export async function GET(
               value={savings.cigsAvoided.toLocaleString("en-US")}
             />
             {latestMilestone && (
-              <Stat label="Milestone" value={`⭐ ${latestMilestone}d`} />
+              <Stat label="Milestone" value={`${latestMilestone}d star`} />
             )}
           </div>
           <div style={{ fontSize: 22, opacity: 0.7, alignSelf: "flex-end" }}>
