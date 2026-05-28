@@ -193,6 +193,10 @@ export default async function LandingPage() {
       {/* FOOTER */}
       <footer className="border-t border-neutral-200 py-10 text-center text-xs text-neutral-500 dark:border-neutral-800">
         <p>
+          <Link href="/blog" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">
+            Articles
+          </Link>
+          {" · "}
           Quit Buddy · Private by default · Your channel data only goes to your
           channel-mates.
         </p>
