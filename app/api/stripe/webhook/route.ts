@@ -45,6 +45,7 @@ async function syncSubscription(sub: Stripe.Subscription, fallbackUserId?: strin
       subscription_renews_at: renewsAt,
       stripe_customer_id: customerId,
       stripe_subscription_id: sub.id,
+      payment_provider: active ? "stripe" : null,
     })
     .eq("id", userId);
   if (error) console.error("[stripe] profile update failed:", error);

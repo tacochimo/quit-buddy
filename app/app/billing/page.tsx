@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { COACH_DAILY_LIMITS, type Tier } from "@/lib/subscription";
 import { BillingActions } from "./actions";
+import { PayPalButton } from "./paypal-button";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,9 @@ export default async function BillingPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, subscription_renews_at, stripe_customer_id")
+    .select(
+      "subscription_tier, subscription_renews_at, stripe_customer_id, paypal_subscription_id, payment_provider",
+    )
     .eq("id", user.id)
     .single();
 
@@ -28,7 +31,16 @@ export default async function BillingPage({
   const renewsAt = profile?.subscription_renews_at
     ? new Date(profile.subscription_renews_at)
     : null;
-  const hasCustomer = Boolean(profile?.stripe_customer_id);
+  const hasStripe = Boolean(profile?.stripe_customer_id);
+  const provider = profile?.payment_provider as
+    | "stripe"
+    | "paypal"
+    | null
+    | undefined;
+
+  const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? "";
+  const paypalPlanId = process.env.NEXT_PUBLIC_PAYPAL_PLAN_ID ?? "";
+  const paypalEnabled = Boolean(paypalClientId && paypalPlanId);
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-12">
@@ -87,14 +99,46 @@ export default async function BillingPage({
             <Bullet>Same coach, same personas, same data — just more room</Bullet>
             <Bullet>Directly supports the cost of running the AI</Bullet>
           </ul>
-          <BillingActions hasCustomer={hasCustomer} tier={tier} />
+          <BillingActions hasCustomer={hasStripe} tier={tier} />
+          {paypalEnabled && (
+            <>
+              <div className="flex items-center gap-3 text-xs text-neutral-500">
+                <span className="h-px flex-1 bg-neutral-300 dark:bg-neutral-700" />
+                <span>or</span>
+                <span className="h-px flex-1 bg-neutral-300 dark:bg-neutral-700" />
+              </div>
+              <PayPalButton
+                clientId={paypalClientId}
+                planId={paypalPlanId}
+              />
+            </>
+          )}
         </section>
       ) : (
         <section className="flex flex-col gap-4 rounded-3xl border border-neutral-200 p-6 dark:border-neutral-800">
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Manage payment method, view invoices, or cancel anytime.
-          </p>
-          <BillingActions hasCustomer={hasCustomer} tier={tier} />
+          {provider === "paypal" ? (
+            <>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                You&apos;re subscribed via PayPal. Manage or cancel in your
+                PayPal account.
+              </p>
+              <a
+                href="https://www.paypal.com/myaccount/autopay/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="self-start rounded-lg border border-neutral-300 px-5 py-3 text-sm font-medium transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+              >
+                Manage on PayPal →
+              </a>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Manage payment method, view invoices, or cancel anytime.
+              </p>
+              <BillingActions hasCustomer={hasStripe} tier={tier} />
+            </>
+          )}
         </section>
       )}
 
