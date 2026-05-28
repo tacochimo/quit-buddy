@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { track } from "@/lib/analytics";
 
 type ActionResult = { error: string } | undefined;
 
@@ -47,6 +48,7 @@ export async function saveTriggerPlan(
     { onConflict: "user_id,trigger" },
   );
   if (error) return { error: error.message };
+  track("plan_saved", user.id, { trigger });
   revalidatePath("/app/cravings");
   revalidatePath("/app/home");
 }

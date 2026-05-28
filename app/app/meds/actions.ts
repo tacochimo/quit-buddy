@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { track } from "@/lib/analytics";
 
 type ActionResult = { error: string } | undefined;
 
@@ -101,6 +102,9 @@ export async function logDose(formData: FormData): Promise<ActionResult> {
     count: kind === "dose" ? count : null,
   });
   if (error) return { error: error.message };
+  if (kind === "dose") {
+    track("med_dose_logged", user.id, { count });
+  }
   revalidatePath("/app/meds");
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscription } from "@/lib/paypal";
+import { track } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -62,5 +63,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "persist_failed" }, { status: 500 });
   }
 
+  track("upgrade_started", user.id, { provider: "paypal" });
+  track("upgrade_completed", user.id, { provider: "paypal" });
   return NextResponse.json({ ok: true });
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isCompanionId } from "@/lib/companions";
+import { track } from "@/lib/analytics";
 
 export async function setCompanion(value: string | null) {
   const supabase = await createClient();
@@ -21,6 +22,7 @@ export async function setCompanion(value: string | null) {
     .update({ companion: next })
     .eq("id", user.id);
   if (error) return { error: error.message };
+  track("companion_changed", user.id, { companion: next });
   revalidatePath("/app/settings");
   revalidatePath("/app/coach");
 }

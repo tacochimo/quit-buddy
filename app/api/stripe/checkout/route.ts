@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe, siteUrl } from "@/lib/stripe";
+import { track } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -43,5 +44,6 @@ export async function POST() {
   if (!session.url) {
     return NextResponse.json({ error: "no_url" }, { status: 500 });
   }
+  track("upgrade_started", user.id, { provider: "stripe" });
   return NextResponse.json({ url: session.url });
 }

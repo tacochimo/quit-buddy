@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { notifyBuddyOfCraving } from "@/lib/buddy";
+import { track } from "@/lib/analytics";
 
 export async function logCraving(formData: FormData) {
   const supabase = await createClient();
@@ -37,6 +38,16 @@ export async function logCraving(formData: FormData) {
 
   // Fire-and-forget buddy ping. Helper handles "no buddy" + threshold.
   await notifyBuddyOfCraving(user.id, intensity);
+
+  track("craving_logged", user.id, {
+    intensity,
+    trigger,
+    has_plan_outcome: planUsed !== null,
+    plan_outcome: planUsed,
+  });
+  if (planUsed === "yes" || planUsed === "no") {
+    track("plan_used", user.id, { trigger, outcome: planUsed });
+  }
 
   revalidatePath("/app/cravings");
 }

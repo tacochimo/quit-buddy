@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { track } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 // Stripe needs raw bytes for signature verification — disable body parsing.
@@ -49,6 +50,7 @@ async function syncSubscription(sub: Stripe.Subscription, fallbackUserId?: strin
     })
     .eq("id", userId);
   if (error) console.error("[stripe] profile update failed:", error);
+  else if (active) track("upgrade_completed", userId, { provider: "stripe" });
 }
 
 export async function POST(req: NextRequest) {

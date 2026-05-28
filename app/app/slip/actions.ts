@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { notifyBuddyOfRelapse } from "@/lib/buddy";
+import { track } from "@/lib/analytics";
 
 export type SlipFormResult = { error: string } | undefined;
 
@@ -69,6 +70,13 @@ export async function recordSlip(formData: FormData): Promise<SlipFormResult> {
     streak_event_id: streakEventId,
   });
   if (slipErr) return { error: slipErr.message };
+
+  track("slip_recorded", user.id, {
+    kind,
+    count: countNum,
+    trigger,
+    intensity: intensityNum,
+  });
 
   if (kind === "relapse") {
     await notifyBuddyOfRelapse(user.id);

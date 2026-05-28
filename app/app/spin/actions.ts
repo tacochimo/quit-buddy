@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { applyOutcome, type OutcomeMeta } from "@/lib/spin";
 import { getLocalNow } from "@/lib/timezone";
+import { track } from "@/lib/analytics";
 
 export type SpinResult =
   | { ok: true; outcome: OutcomeMeta; alreadySpun: false }
@@ -48,6 +49,7 @@ export async function spinToday(): Promise<SpinResult> {
     today,
     profile?.companion ?? null,
   );
+  track("spin_completed", user.id, { outcome: outcome.id });
   revalidatePath("/app/spin");
   revalidatePath("/app/home");
   revalidatePath("/app/coach");

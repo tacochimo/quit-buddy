@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isMood } from "@/lib/mood";
 import { getLocalNow } from "@/lib/timezone";
+import { track } from "@/lib/analytics";
 
 export async function logMood(mood: string) {
   if (!isMood(mood)) return { error: "Unknown mood." };
@@ -27,5 +28,6 @@ export async function logMood(mood: string) {
     { onConflict: "user_id,log_date" },
   );
   if (error) return { error: error.message };
+  track("mood_logged", user.id, { mood });
   revalidatePath("/app/home");
 }

@@ -15,6 +15,7 @@ import { getRecentMood } from "@/lib/mood";
 import { coachDailyLimit, getTier } from "@/lib/subscription";
 import { getActiveRewards } from "@/lib/spin";
 import { getLocalNow } from "@/lib/timezone";
+import { track } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -176,6 +177,13 @@ export async function POST(request: NextRequest) {
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
+
+  track("coach_message_sent", user.id, {
+    tier,
+    daily_used: quotaUsed,
+    daily_limit: dailyLimit,
+    has_bonus_messages: rewards.bonusMessages > 0,
+  });
 
   // Persist the user message up front so a mid-stream disconnect doesn't
   // lose it. Assistant row is inserted at stream end (or never, on error).
