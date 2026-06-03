@@ -104,7 +104,7 @@ export default async function BuddyPage() {
             {link.invite_code}
           </p>
           <p className="mt-3 text-xs text-amber-800 dark:text-amber-300">
-            They open Embergo → Buddy → paste the code.
+            They open Lastember → Buddy → paste the code.
           </p>
           <div className="mt-4">
             <CancelButton />

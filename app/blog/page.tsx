@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
-  title: "Articles — Embergo",
+  title: "Articles — Lastember",
   description:
     "Practical writing about quitting smoking, withdrawal, cravings, and the science of cessation.",
 };
@@ -17,7 +17,7 @@ export default function BlogIndex() {
           href="/"
           className="text-sm text-neutral-500 hover:underline"
         >
-          ← Embergo
+          ← Lastember
         </Link>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           Articles

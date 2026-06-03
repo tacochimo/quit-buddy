@@ -11,7 +11,7 @@ const PLAYER_X = 30;
 const PLAYER_W = 20;
 const PLAYER_H = 20;
 
-const STORAGE_KEY = "embergo.game.high";
+const STORAGE_KEY = "lastember.game.high";
 
 type Obstacle = { x: number; w: number; h: number };
 

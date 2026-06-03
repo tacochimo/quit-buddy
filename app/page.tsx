@@ -16,7 +16,7 @@ export default async function LandingPage() {
       {/* HERO */}
       <section className="mx-auto max-w-3xl px-6 py-20 sm:py-28 text-center">
         <p className="mb-3 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-          🚭 Embergo
+          🚭 Lastember
         </p>
         <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
           Quit smoking with people who{" "}
@@ -71,7 +71,7 @@ export default async function LandingPage() {
       {/* DIFFERENTIATORS */}
       <section className="mx-auto max-w-5xl px-6 py-20">
         <h2 className="text-center text-2xl font-bold sm:text-3xl">
-          What Embergo does differently
+          What Lastember does differently
         </h2>
         <div className="mt-12 grid gap-6 sm:grid-cols-3">
           <Feature
@@ -197,7 +197,7 @@ export default async function LandingPage() {
             Articles
           </Link>
           {" · "}
-          Embergo · Private by default · Your channel data only goes to your
+          Lastember · Private by default · Your channel data only goes to your
           channel-mates.
         </p>
         <p className="mt-2">

@@ -15,7 +15,7 @@ export function InviteShare({ code, url }: { code: string; url: string }) {
             share: (data: ShareData) => Promise<void>;
           }).share({
             title: "Quit smoking with me",
-            text: `Joining me on Embergo? Use my code ${code} when you sign up.`,
+            text: `Joining me on Lastember? Use my code ${code} when you sign up.`,
             url,
           });
           setStatus("Shared.");

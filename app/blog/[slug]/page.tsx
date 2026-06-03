@@ -14,12 +14,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = loadPost(slug);
-  if (!post) return { title: "Not found — Embergo" };
+  if (!post) return { title: "Not found — Lastember" };
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
     "http://localhost:3000";
   return {
-    title: `${post.title} — Embergo`,
+    title: `${post.title} — Lastember`,
     description: post.description,
     alternates: { canonical: `${siteUrl}/blog/${post.slug}` },
     openGraph: {
@@ -77,7 +77,7 @@ export default async function BlogPost({
       <section className="rounded-2xl bg-emerald-50 p-6 text-center dark:bg-emerald-950/30">
         <p className="text-lg font-semibold">Quitting now?</p>
         <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
-          Embergo is built around a small private channel of 1-3 people who
+          Lastember is built around a small private channel of 1-3 people who
           actually know you — plus a coach who knows your patterns. Free, no
           ads.
         </p>
@@ -85,7 +85,7 @@ export default async function BlogPost({
           href="/login"
           className="mt-4 inline-block rounded-full bg-emerald-600 px-6 py-2.5 font-semibold text-white transition hover:bg-emerald-700"
         >
-          Try Embergo
+          Try Lastember
         </Link>
       </section>
     </main>

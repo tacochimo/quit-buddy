@@ -50,7 +50,7 @@ export const PREP_STEPS: PrepStep[] = [
   },
   {
     id: "home_screen",
-    label: "Add Embergo to your home screen",
+    label: "Add Lastember to your home screen",
     body: "Long-press in your browser → \"Add to Home Screen\". Notifications and quick-actions work better.",
   },
 ];

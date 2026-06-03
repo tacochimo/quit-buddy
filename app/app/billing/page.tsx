@@ -86,7 +86,7 @@ export default async function BillingPage({
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
               Upgrade
             </p>
-            <p className="mt-1 text-2xl font-bold">Embergo Plus</p>
+            <p className="mt-1 text-2xl font-bold">Lastember Plus</p>
             <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
               $4.99 / month · cancel any time
             </p>

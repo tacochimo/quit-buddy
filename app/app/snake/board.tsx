@@ -12,7 +12,7 @@ const TICK_START_MS = 125; // 8 cells/sec
 const TICK_MIN_MS = 70; // ~14 cells/sec
 const TICK_STEP_MS = 4; // ~0.2 cells/sec speed-up per pellet
 
-const STORAGE_KEY = "embergo.snake.high";
+const STORAGE_KEY = "lastember.snake.high";
 
 type Dir = "up" | "down" | "left" | "right";
 type Cell = { x: number; y: number };

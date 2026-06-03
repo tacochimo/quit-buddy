@@ -55,4 +55,4 @@ For the basic question — *can I drink my morning coffee?* — yes. Just expect
 - **Quitting smoking nearly doubles caffeine sensitivity** within a week, because the liver enzyme that broke caffeine down was being supercharged by smoking, not by nicotine.
 - **Halve your usual intake for the first week**, drink it earlier, and expect to settle at a lower long-term caffeine baseline than you had as a smoker.
 
-Quitting changes a surprising amount about how the rest of your day feels. If you're tracking your quit and want one place to log how you actually felt today, [Embergo](/login) has a daily check-in that takes a single tap.
+Quitting changes a surprising amount about how the rest of your day feels. If you're tracking your quit and want one place to log how you actually felt today, [Lastember](/login) has a daily check-in that takes a single tap.
