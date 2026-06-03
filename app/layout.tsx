@@ -4,11 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { AnalyticsProvider } from "./analytics-provider";
 
 export const metadata: Metadata = {
-  title: "Quit Buddy",
+  title: "Embergo",
   description: "Quit smoking together. Track streaks, climb your channel leaderboard.",
   appleWebApp: {
     capable: true,
-    title: "Quit Buddy",
+    title: "Embergo",
     statusBarStyle: "default",
   },
   verification: {

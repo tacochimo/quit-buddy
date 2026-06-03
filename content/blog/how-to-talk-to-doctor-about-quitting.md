@@ -53,7 +53,7 @@ Show up with:
 - **Any medications or conditions** that might interact (especially for bupropion).
 - **Your craving patterns**, if you've been tracking them. "Most cravings hit between 3-6pm after work" gives the doctor something concrete to work with.
 
-If you're using a cessation tracker, this is exactly what the doctor PDF in Quit Buddy is for — one page, clinical format, includes adherence data once you start medication.
+If you're using a cessation tracker, this is exactly what the doctor PDF in Embergo is for — one page, clinical format, includes adherence data once you start medication.
 
 ## How to bring it up
 
@@ -94,4 +94,4 @@ If your doctor told you to "just use willpower," that is not medical advice — 
 - Open with: "I want to quit smoking and I want your help with the medical side."
 - If you don't get useful help, **call 1-800-QUIT-NOW** or ask for a tobacco-treatment specialist referral.
 
-If you're already tracking your smoking and want a one-page handout for the visit, [Quit Buddy](/login) generates a clinical PDF from your data.
+If you're already tracking your smoking and want a one-page handout for the visit, [Embergo](/login) generates a clinical PDF from your data.

@@ -47,7 +47,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { token } = await params;
   const data = await loadStreak(token);
-  if (!data) return { title: "Quit Buddy" };
+  if (!data) return { title: "Embergo" };
   const url = `${siteUrl()}/share/${token}`;
   const image = `${siteUrl()}/api/share/streak/${token}`;
   const title = `${data.firstName} is ${data.days} ${data.days === 1 ? "day" : "days"} smoke-free`;

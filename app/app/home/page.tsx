@@ -193,7 +193,7 @@ export default async function HomePage() {
       <TimezoneCapture needs={!profile.timezone} />
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Quit Buddy</h1>
+          <h1 className="text-2xl font-bold">Embergo</h1>
           <p className="text-sm text-neutral-500">
             Hi, {profile.display_name}
           </p>

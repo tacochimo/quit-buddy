@@ -51,7 +51,7 @@ export async function GET() {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 30) || "patient";
-  const filename = `quit-buddy-report_${slug}_${stamp}.pdf`;
+  const filename = `embergo-report_${slug}_${stamp}.pdf`;
 
   return new NextResponse(body, {
     headers: {

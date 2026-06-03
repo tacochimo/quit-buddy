@@ -30,7 +30,7 @@ const MILESTONE_LABEL: Record<number, string> = {
 };
 const MILESTONE_SET = new Set<number>(MILESTONES);
 
-const STORAGE_KEY = "quitbuddy.flap.high";
+const STORAGE_KEY = "embergo.flap.high";
 
 type Pipe = {
   x: number;

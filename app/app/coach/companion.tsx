@@ -71,7 +71,7 @@ export function CoachCompanion({
   // Milestone celebration — fires once per (browser, day) using localStorage.
   useEffect(() => {
     if (!milestoneDay) return;
-    const key = `quitbuddy.companion.celebrated.${milestoneDay}`;
+    const key = `embergo.companion.celebrated.${milestoneDay}`;
     if (typeof window === "undefined") return;
     if (window.localStorage.getItem(key)) return;
     setMode("celebrate");

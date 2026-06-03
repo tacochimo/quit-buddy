@@ -138,15 +138,15 @@ export function ReportDocument({ data }: { data: ReportData }) {
 
   return (
     <Document
-      title={`Quit Buddy report — ${data.patient.displayName}`}
-      author="Quit Buddy"
+      title={`Embergo report — ${data.patient.displayName}`}
+      author="Embergo"
     >
       <Page size="LETTER" style={styles.page}>
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Smoking Cessation Report</Text>
             <Text style={styles.subtitle}>
-              Self-tracked data from Quit Buddy — share with your clinician
+              Self-tracked data from Embergo — share with your clinician
             </Text>
           </View>
           <Text style={styles.generatedAt}>
@@ -378,7 +378,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
         )}
 
         <Text style={styles.footer}>
-          Self-reported data from the Quit Buddy app. Not a medical record.
+          Self-reported data from the Embergo app. Not a medical record.
           Intended to support discussion with a healthcare provider.
         </Text>
       </Page>

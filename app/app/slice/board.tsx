@@ -29,7 +29,7 @@ const JUICE_COLOR: Record<string, string> = {
 };
 const BOMB_COLOR = "#525252";
 
-const STORAGE_KEY = "quitbuddy.slice.high";
+const STORAGE_KEY = "embergo.slice.high";
 
 type Fruit = {
   id: number;

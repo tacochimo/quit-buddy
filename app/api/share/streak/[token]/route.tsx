@@ -67,7 +67,7 @@ export async function GET(
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, opacity: 0.9 }}>
           <span style={{ fontSize: 28, fontWeight: 600 }}>
-            {`${firstName} on Quit Buddy`}
+            {`${firstName} on Embergo`}
           </span>
         </div>
 
@@ -108,7 +108,7 @@ export async function GET(
             ) : null}
           </div>
           <div style={{ display: "flex", fontSize: 22, opacity: 0.7, alignSelf: "flex-end" }}>
-            quitbuddy.app
+            embergo.app
           </div>
         </div>
       </div>

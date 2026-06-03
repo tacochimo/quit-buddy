@@ -102,4 +102,4 @@ You may read about PAWS — *post-acute withdrawal syndrome.* It's not officiall
 - **Year 5**: stroke risk approaches never-smoker baseline
 - **Year 10**: lung cancer risk roughly half of a continuing smoker's
 
-If you're at any of these stages and want one place to track where you are on the curve, [Quit Buddy](/login) surfaces your current withdrawal stage on the home screen.
+If you're at any of these stages and want one place to track where you are on the curve, [Embergo](/login) surfaces your current withdrawal stage on the home screen.

@@ -76,4 +76,4 @@ Beyond the timeline, three things help the most:
 
 The first day is mostly a physiological win. Day 2-3 is where the work is. Get through the first 72 hours and you've cleared the chemical bottom — everything past that is psychology, and psychology is workable.
 
-If you want a single place to track what time of day cravings hit (so you can plan around your real pattern, not a generic one), [Quit Buddy](/login) logs them and surfaces the time-of-day cluster after a few days.
+If you want a single place to track what time of day cravings hit (so you can plan around your real pattern, not a generic one), [Embergo](/login) logs them and surfaces the time-of-day cluster after a few days.

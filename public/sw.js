@@ -1,4 +1,4 @@
-// Quit Buddy service worker. Handles incoming Web Push events and forwards
+// Embergo service worker. Handles incoming Web Push events and forwards
 // clicks back to the app. Intentionally no caching — keep the worker simple.
 
 self.addEventListener("push", (event) => {
@@ -6,15 +6,15 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "Quit Buddy", body: event.data ? event.data.text() : "" };
+    data = { title: "Embergo", body: event.data ? event.data.text() : "" };
   }
 
-  const title = data.title || "Quit Buddy";
+  const title = data.title || "Embergo";
   const options = {
     body: data.body || "",
     icon: "/icon-192.svg",
     badge: "/icon-192.svg",
-    tag: data.tag || "quit-buddy",
+    tag: data.tag || "embergo",
     data: { url: data.url || "/app/home" },
   };
 

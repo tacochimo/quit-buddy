@@ -16,13 +16,13 @@ export function ShareButton({
       ? `${window.location.origin}/app/channels/join?code=${inviteCode}`
       : "";
 
-  const shareText = `Join me on Quit Buddy in "${channelName}". Invite code: ${inviteCode}\n${inviteUrl}`;
+  const shareText = `Join me on Embergo in "${channelName}". Invite code: ${inviteCode}\n${inviteUrl}`;
 
   async function onShare() {
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: `Join "${channelName}" on Quit Buddy`,
+          title: `Join "${channelName}" on Embergo`,
           text: `Invite code: ${inviteCode}`,
           url: inviteUrl,
         });

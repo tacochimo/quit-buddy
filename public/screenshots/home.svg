@@ -23,7 +23,7 @@
   <circle cx="275" cy="18" r="3" fill="#0a0a0a"/>
 
   <!-- header -->
-  <text x="20" y="58" class="text-dark" font-size="20" font-weight="700">Quit Buddy</text>
+  <text x="20" y="58" class="text-dark" font-size="20" font-weight="700">Embergo</text>
   <text x="20" y="74" class="text-muted" font-size="11">Hi, tacochimo</text>
   <text x="260" y="62" class="text-muted" font-size="11">Settings</text>
 

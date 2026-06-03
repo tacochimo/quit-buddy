@@ -49,7 +49,7 @@ A few common ones, with their numbers:
 
 It's not motivation. The savings figure is most useful as a **decision anchor on a hard day.** When the craving hits and the rationalization starts ("just one"), the relevant number isn't "$8 for a pack" — it's "$8 minus the day-by-day total I'm walking toward." Knowing the cumulative number turns a one-cigarette decision into a one-day-of-savings decision, which is exactly what it actually is.
 
-Most cessation apps surface this number prominently for that reason. (Including ours: when you log your cigarettes-per-day and pack price in onboarding, Quit Buddy shows the running total on the home screen and lets you tie it to a named goal.)
+Most cessation apps surface this number prominently for that reason. (Including ours: when you log your cigarettes-per-day and pack price in onboarding, Embergo shows the running total on the home screen and lets you tie it to a named goal.)
 
 ## A note on what doesn't count
 
