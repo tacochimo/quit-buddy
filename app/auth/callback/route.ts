@@ -7,7 +7,12 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 //   OTP magic link        → ?token_hash=...&type=email
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
-  const next = searchParams.get("next") ?? "/app/home";
+  // Only honor internal paths so ?next= can't become an open redirect.
+  const nextParam = searchParams.get("next");
+  const next =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/app/home";
 
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");

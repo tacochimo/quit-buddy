@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,6 +20,14 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
+  // Where to send the user after sign-in. Only allow internal paths so a
+  // crafted ?next= can't turn this into an open redirect.
+  const nextParam = searchParams.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/app/home";
+
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -36,7 +45,7 @@ function LoginForm() {
       options: {
         // We still set this for the magic-link fallback, but the user enters the
         // 6-digit code below instead — no cross-browser cookie issues.
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
         shouldCreateUser: true,
       },
     });
@@ -68,7 +77,7 @@ function LoginForm() {
     if (result.error) {
       setError(result.error.message);
     } else {
-      router.push("/app/home");
+      router.push(safeNext as Route);
       router.refresh();
     }
   }

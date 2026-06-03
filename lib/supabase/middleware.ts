@@ -32,11 +32,15 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Gate /app/* routes behind auth.
+  // Gate /app/* routes behind auth. Preserve the intended destination
+  // (path + query, e.g. an invite link) so login can return the user there.
   const isProtected = request.nextUrl.pathname.startsWith("/app");
   if (isProtected && !user) {
+    const next = request.nextUrl.pathname + request.nextUrl.search;
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("next", next);
     return NextResponse.redirect(url);
   }
 
